@@ -6,5 +6,13 @@ import (
 )
 
 func SetupRoutes(app *fiber.App) {
-	app.Get("/",controller.PostBillController)
+	api := app.Group("/api")
+
+	v1 := api.Group("/v1")
+
+	v1.Post("/post-bill", controller.PostBillController)
+	v1.Post("/post-distributor", controller.PostDistributorController)
+	v1.Post("/post-domain", controller.PostDomainController)
+	// v1.Post("/post-distributor", controller.PostDistributorController)
+
 }

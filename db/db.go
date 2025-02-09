@@ -3,7 +3,7 @@ package database
 import (
 	"log"
 	"os"
-
+	
 	"github.com/devMukulSingh/billManagementServer.git/model"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -27,6 +27,6 @@ func ConnectDb() {
 		log.Fatal("Database connection failed")
 	}
 	log.Print("Connection to db successfull")
-	db.AutoMigrate(new(model.Bill))
+	db.AutoMigrate(&model.Bill{},&model.Distributor{},&model.Item{},&model.Domain{})
 	DbConn = db
 }
