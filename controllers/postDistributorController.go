@@ -7,21 +7,21 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+type Distributor struct {
+	Distributor string `json:"distributor"`
+	DomainID    string    `json:"domainId"`
+}
+
 func PostDistributorController(c *fiber.Ctx) error {
 
-	type Distributor struct {
-		Distributor string `json:"distributor"`
-		DomainID    string    `json:"domainId"`
-	}
-
-	req := new(Distributor)
-	if err := c.BodyParser(req); err != nil {
+	body := new(Distributor)
+	if err := c.BodyParser(body); err != nil {
 		log.Printf("Error parsing body %s", err.Error())
 		return c.Status(400).JSON("Error parssing body")
 	}
 	result := database.DbConn.Create(&model.Distributor{
-		Name:     req.Distributor,
-		DomainID: req.DomainID,
+		Name:     body.Distributor,
+		DomainID: body.DomainID,
 	}); 
 	if result.Error != nil {
 		log.Printf("Error in saving Distributor into db %s", result.Error.Error())

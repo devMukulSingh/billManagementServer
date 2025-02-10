@@ -8,23 +8,25 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+type Item struct {
+	ID						string	`json:"item_id"`
+	Name     				string `json:"name"`
+	Rate     				int    `json:"rate"`
+	Amount   				int    `json:"amount"`
+	Quantity 				int    `json:"quantity"`
+}
+type Bill struct {
+
+	DistributorId 			string `json:"distributor_id"`
+	DomainId      			string `json:"domain_id"`
+	Date        			string `json:"date"`
+	IsPaid      			bool   `json:"isPaid"`
+	Items       			[]Item `json:"items"`
+	TotalAmount 			int    `json:"totalAmount"`
+}
 
 
 func PostBillController(c *fiber.Ctx) error {
-	type Item struct {
-		Name     				string `json:"name"`
-		Rate     				int    `json:"rate"`
-		Amount   				int    `json:"amount"`
-		Quantity 				int    `json:"quantity"`
-	}
-	type Bill struct {
-		DistributorId 			string `json:"distributor_id"`
-		DomainId      			string `json:"domain_id"`
-		Date        			string `json:"date"`
-		IsPaid      			bool   `json:"isPaid"`
-		Items       			[]Item `json:"items"`
-		TotalAmount 			int    `json:"totalAmount"`
-	}
 
 	body := new(Bill)
 	if err := c.BodyParser(body); err != nil {
