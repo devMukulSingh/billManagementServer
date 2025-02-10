@@ -11,7 +11,7 @@ type Base struct {
 	CreatedAt time.Time  `json:"created_at"`
 	UpdatedAt time.Time  `json:"updated_at"`
 	DeletedAt *time.Time `sql:"index" json:"deleted_at"`
-}
+} 
 
 // BeforeCreate will set a UUID rather than numeric ID.
 func (b *Base) BeforeCreate(tx *gorm.DB) (err error) {
@@ -21,11 +21,11 @@ func (b *Base) BeforeCreate(tx *gorm.DB) (err error) {
 
 type Bill struct {
 	Base
-	Distributor   Distributor `json:"distributor" gorm:"not null"`
+	Distributor   Distributor `json:"distributor" gorm:"not null;constraint:onDelete:CASCADE;"`
 	DistributorID string      `json:"distributor_id" gorm:"type:uuid;not null"`
-	Domain        Domain      `json:"domain" gorm:"not null"`
+	Domain        Domain      `json:"domain" gorm:"not null;constraint:onDelete:CASCADE;"`
 	DomainID      string      `json:"domain_id" gorm:"type:uuid;not null"`
-	Items         []Item      `json:"items"`
+	Items         []Item      `json:"items" gorm:"not null; constraint:onDelete:CASCADE;"`
 	Date          string      `json:"date" gorm:"not null"`
 	IsPaid        bool        `json:"isPaid" gorm:"not null"`
 	TotalAmount   int         `json:"totalAmount" gorm:"not null"`

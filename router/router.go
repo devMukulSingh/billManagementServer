@@ -20,6 +20,7 @@ func SetupRoutes(app *fiber.App) {
 
 	v1.Delete("/delete-domin/:id",controller.DeleteDomain)
 	v1.Delete("/delete-distributor/:id",controller.DeleteDistributor)
+	v1.Delete("/delete-bill/:id",controller.DeleteBill)
 
 	// v1.Post("/post-distributor", controller.PostDistributorController) 
 
