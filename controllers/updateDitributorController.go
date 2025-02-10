@@ -10,7 +10,7 @@ import (
 
 func UpdateDistributorController(c *fiber.Ctx) error {
 	id := c.Params("id")
-	
+
 	var exisitingDistributor model.Distributor
 
 	if result := database.DbConn.First(&exisitingDistributor, "id = ?", id); result.Error != nil {

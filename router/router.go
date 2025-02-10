@@ -13,10 +13,11 @@ func SetupRoutes(app *fiber.App) {
 	v1.Post("/post-bill", controller.PostBillController)
 	v1.Post("/post-distributor", controller.PostDistributorController)
 	v1.Post("/post-domain", controller.PostDomainController)
+
 	v1.Put("/put-bill/:id",controller.UpdateBillController)
 	v1.Put("/put-domain/:id",controller.UpdateDomainController)
 	v1.Put("/put-distributor/:id",controller.UpdateDistributorController)
-
+	v1.Delete("/delete-domin/:id",controller.DeleteDomainController)
 
 	// v1.Post("/post-distributor", controller.PostDistributorController) 
 
