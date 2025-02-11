@@ -18,16 +18,23 @@ func (b *Base) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
  
+type User struct{
+	Base
+	Name			string 			`json:"name" gorm:"not null"`
+	Email			string			`json:"email" gorm:"not null"`
+	Bills			[]Bill			`json:"bills"`
+}
 type Bill struct {
 	Base
-	Distributor   Distributor `json:"distributor" gorm:"not null;constraint:onDelete:CASCADE;"`
-	DistributorID string      `json:"distributor_id" gorm:"type:uuid;not null"`
-	Domain        Domain      `json:"domain" gorm:"not null;constraint:onDelete:CASCADE;"`
-	DomainID      string      `json:"domain_id" gorm:"type:uuid;not null"`
-	Items         []Item      `json:"items" gorm:"not null;many2many:bill_items; constraint:onDelete:CASCADE;"`
-	Date          string      `json:"date" gorm:"not null"`
-	IsPaid        bool        `json:"isPaid" gorm:"not null"`
-	TotalAmount   int         `json:"totalAmount" gorm:"not null"`
+	Distributor   		Distributor `json:"distributor" gorm:"not null;constraint:onDelete:CASCADE;"`
+	DistributorID 		string      `json:"distributor_id" gorm:"type:uuid;not null"`
+	Domain        		Domain      `json:"domain" gorm:"not null;constraint:onDelete:CASCADE;"`
+	DomainID      		string      `json:"domain_id" gorm:"type:uuid;not null"`
+	Items         		[]Item      `json:"items" gorm:"not null;many2many:bill_items; constraint:onDelete:CASCADE;"`
+	Date          		string      `json:"date" gorm:"not null"`
+	IsPaid        		bool        `json:"isPaid" gorm:"not null"`
+	TotalAmount   		int         `json:"totalAmount" gorm:"not null"`
+	UserId				string		`json:"user_id" gorm:"type:uuid;not null"`
 }
 
 type Distributor struct {

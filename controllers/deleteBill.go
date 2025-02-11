@@ -22,7 +22,7 @@ func DeleteBill(c *fiber.Ctx) error {
 		}
 	}
 
-	if result := database.DbConn.Select(clause.Associations).Delete(&existingBill, "id =?", id); result.Error != nil {
+	if result := database.DbConn.Select(clause.Associations).Delete(&existingBill); result.Error != nil {
 		log.Printf("Error deleting Bill %s", result.Error.Error())
 		return c.Status(500).JSON("Error deleting Bill")
 	}

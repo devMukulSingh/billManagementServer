@@ -8,6 +8,7 @@ import (
 func SetupRoutes(app *fiber.App) {
 	api := app.Group("/api")
 
+	api.Post("/webhooks",controller.Webhook)
 	v1 := api.Group("/v1")
 
 	v1.Post("/post-bill", controller.PostBill)
