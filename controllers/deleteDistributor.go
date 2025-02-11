@@ -12,12 +12,17 @@ import (
 
 func DeleteDistributor(c *fiber.Ctx) error {
 	id := c.Params("id")
+	var existingDistributor model.Distributor;
+
+	if result := database.DbConn.First(&existingDistributor, "id=?", id); result != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			log.Printf("No distributor found %s", result.Error.Error())
+			return c.Status(400).JSON("Error:No Record found")
+		}
+	}
+
 	var pgErr *pgconn.PgError
 	if result := database.DbConn.Delete(&model.Distributor{}, "id =?", id); result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			log.Printf("No Distributor found %s", result.Error.Error())
-			return c.Status(400).JSON("Error:No Distributor found")
-		}
 		if errors.As(result.Error, &pgErr) {
 		if pgErr.Code=="23503"  {
 			log.Printf("Error:Delete associated domains and bills to delete distributor. %s",result.Error.Error())
