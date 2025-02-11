@@ -22,7 +22,7 @@ func DeleteDistributor(c *fiber.Ctx) error {
 	}
 
 	var pgErr *pgconn.PgError
-	if result := database.DbConn.Delete(&model.Distributor{}, "id =?", id); result.Error != nil {
+	if result := database.DbConn.Delete(&existingDistributor); result.Error != nil {
 		if errors.As(result.Error, &pgErr) {
 		if pgErr.Code=="23503"  {
 			log.Printf("Error:Delete associated domains and bills to delete distributor. %s",result.Error.Error())
