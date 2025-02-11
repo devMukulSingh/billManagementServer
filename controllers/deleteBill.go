@@ -13,11 +13,16 @@ import (
 
 func DeleteBill(c *fiber.Ctx) error {
 	id := c.Params("id")
-	if result := database.DbConn.Select(clause.Associations).Delete(&model.Bill{}, "id =?", id); result.Error != nil {
+	var existingBill model.Bill
+
+	if result := database.DbConn.First(&existingBill, "id=?", id); result != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			log.Printf("No Bill found %s", result.Error.Error())
-			return c.Status(400).JSON("Error:No Bill found")
+			log.Printf("No bill found %s", result.Error.Error())
+			return c.Status(400).JSON("Error:No Record found")
 		}
+	}
+
+	if result := database.DbConn.Select(clause.Associations).Delete(&existingBill, "id =?", id); result.Error != nil {
 		log.Printf("Error deleting Bill %s", result.Error.Error())
 		return c.Status(500).JSON("Error deleting Bill")
 	}
