@@ -23,6 +23,8 @@ func SetupRoutes(app *fiber.App) {
 	domain.Put("/put-domain/:domainId",controller.UpdateDomain)
 	domain.Delete("/delete-domain/:domainId",controller.DeleteDomain)
 
+	distributor.Get("/get-all-distributors",controller.GetAllDistributors)
+	distributor.Get("/get-distributor/:distributorId",controller.GetDistributor)
 	distributor.Post("/post-distributor", controller.PostDistributor)
 	distributor.Put("/put-distributor/:distributorId",controller.UpdateDistributor)
 	distributor.Delete("/delete-distributor/:distributorId",controller.DeleteDistributor)

@@ -13,6 +13,39 @@ import (
 )
 
 
+func GetAllDistributors(c * fiber.Ctx) error{
+
+	userId := c.Params("userId")
+
+	var distributors []model.Distributor;
+
+	if err := database.DbConn.Where("user_id =?",userId).Find(&distributors).Error; err!=nil{
+		return c.Status(500).JSON(fiber.Map{
+			"error":"Internal server error " + err.Error(),
+		})
+	}
+
+	return c.Status(200).JSON(distributors);
+
+}
+
+func GetDistributor(c * fiber.Ctx) error{
+
+	distributorId := c.Params("distributorId")
+	userId := c.Params("userId")
+
+	var distributor model.Distributor;
+
+	if err := database.DbConn.Limit(1).Where("id =? AND user_id =?", distributorId,userId).Find(&distributor).Error; err!=nil{
+		return c.Status(500).JSON(fiber.Map{
+			"error":"Internal server error " + err.Error(),
+		})
+	}
+
+	return c.Status(200).JSON(distributor);
+
+}
+
 func PostDistributor(c *fiber.Ctx) error {
 
 	body := new(types.Distributor)
