@@ -35,6 +35,9 @@ func SetupRoutes(app *fiber.App) {
 	bill.Put("/put-bill/:billId",controller.UpdateBill)
 	bill.Delete("/delete-bill/:billId",controller.DeleteBill)
 	
+
+	item.Get("/get-all-items/:billId",controller.GetAllItems)
+	// item.Get("/get-item",controller.GetItem)
 	item.Post("/post-item",controller.PostItem)
 	item.Put("/put-item/:itemId",controller.UpdateItem)
 	item.Delete("/delete-item/:itemId",controller.DeleteItem)

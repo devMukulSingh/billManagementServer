@@ -10,6 +10,36 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+func GetAllItems(c * fiber.Ctx) error{
+	
+	billId := c.Params("billId")
+
+	var items []model.Item
+
+	if err := database.DbConn.Where("bill_id =?",billId).Find(&items).Error; err!=nil{
+		return c.Status(500).JSON(fiber.Map{
+			"error":"Internal server error " + err.Error(),
+		})
+	}
+
+	return c.Status(200).JSON(items);
+}
+
+// func GetItem(c * fiber.Ctx) error{
+	
+// 	userId := c.Params("userId")
+// 	itemId := c.Params("itemId")
+	
+// 	var items []model.Item
+
+// 	if err := database.DbConn.Limit(1).Where("user_id =? AND id",userId,itemId).Find(&items).Error; err!=nil{
+// 		return c.Status(500).JSON(fiber.Map{
+// 			"error":"Internal server error " + err.Error(),
+// 		})
+// 	}
+
+// 	return c.Status(200).JSON(items);
+// }
 
 func PostItem(c *fiber.Ctx) error {
 	body := new(types.Item)
