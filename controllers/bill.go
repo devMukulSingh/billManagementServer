@@ -12,6 +12,38 @@ import (
 	"gorm.io/gorm/clause"
 )
 
+func GetAllBills( c *fiber.Ctx) error{
+
+	userId := c.Params("userId");
+
+	var bills []model.Bill
+
+	if err := database.DbConn.Where("user_id =?",userId).Find(&bills).Error; err!=nil{
+		return c.Status(500).JSON(fiber.Map{
+			"error":"Internal server error " + err.Error(),
+		})
+	}
+
+	return c.Status(200).JSON(bills)
+
+}
+
+func GetBill( c *fiber.Ctx) error{
+
+	userId := c.Params("billId");
+	billId := c.Params("userId");
+
+	var bill model.Bill
+
+	if err := database.DbConn.Limit(1).Where("id =? AND user_id=?",billId,userId).Find(&bill).Error; err!=nil{
+		return c.Status(500).JSON(fiber.Map{
+			"error":"Internal server error " + err.Error(),
+		})
+	}
+	return c.Status(200).JSON(bill)
+}
+
+
 func PostBill(c *fiber.Ctx) error {
 
 	body := new(types.Bill)
@@ -58,8 +90,6 @@ func PostBill(c *fiber.Ctx) error {
 	}
 	return c.Status(201).JSON("bill created successfully")
 }
-
-
 
 func UpdateBill(c *fiber.Ctx) error {
 
@@ -116,6 +146,7 @@ func UpdateBill(c *fiber.Ctx) error {
 
 	return c.Status(200).JSON("bill updated successfully")
 }
+
 func DeleteBill(c *fiber.Ctx) error {
 	billId := c.Params("billId")
 	var existingBill model.Bill
