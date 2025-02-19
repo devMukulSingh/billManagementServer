@@ -17,21 +17,22 @@ func SetupRoutes(app *fiber.App) {
 	distributor := v1.Group("/distributor")
 	item := v1.Group("/item")
 
-	domain.Get("/get-domain",controller.GetDomain)
+	domain.Get("/get-all-domains",controller.GetAllDomains)
+	domain.Get("/get-domain/:domainId",controller.GetDomain)
 	domain.Post("/post-domain", controller.PostDomain)
-	domain.Put("/put-domain/:id",controller.UpdateDomain)
-	domain.Delete("/delete-domain/:id",controller.DeleteDomain)
+	domain.Put("/put-domain/:domainId",controller.UpdateDomain)
+	domain.Delete("/delete-domain/:domainId",controller.DeleteDomain)
 
 	distributor.Post("/post-distributor", controller.PostDistributor)
-	distributor.Put("/put-distributor/:id",controller.UpdateDistributor)
-	distributor.Delete("/delete-distributor/:id",controller.DeleteDistributor)
+	distributor.Put("/put-distributor/:distributorId",controller.UpdateDistributor)
+	distributor.Delete("/delete-distributor/:distributorId",controller.DeleteDistributor)
 
 	bill.Post("/post-bill", controller.PostBill)
-	bill.Put("/put-bill/:id",controller.UpdateBill)
-	bill.Delete("/delete-bill/:id",controller.DeleteBill)
+	bill.Put("/put-bill/:billId",controller.UpdateBill)
+	bill.Delete("/delete-bill/:billId",controller.DeleteBill)
 	
 	item.Post("/post-item",controller.PostItem)
-	item.Put("/put-item/:id",controller.UpdateItem)
-	item.Delete("/delete-item/:id",controller.DeleteItem)
+	item.Put("/put-item/:itemId",controller.UpdateItem)
+	item.Delete("/delete-item/:itemId",controller.DeleteItem)
 
 }
