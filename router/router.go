@@ -1,31 +1,37 @@
-package router 
+package router
 
 import (
 	"github.com/devMukulSingh/billManagementServer.git/controllers"
+	"github.com/devMukulSingh/billManagementServer.git/middleware"
 	"github.com/gofiber/fiber/v2"
 )
 
 func SetupRoutes(app *fiber.App) {
+
 	api := app.Group("/api")
-
 	api.Post("/webhooks",controller.Webhook)
-	v1 := api.Group("/v1")
+	v1 := api.Group("/v1/:userId",middleware.ValidateUser)
+	
+	domain := v1.Group("/domain")
+	bill := v1.Group("/bill")
+	distributor := v1.Group("/distributor")
+	item := v1.Group("/item")
 
-	v1.Post("/post-bill", controller.PostBill)
-	v1.Post("/post-distributor", controller.PostDistributor)
-	v1.Post("/post-domain", controller.PostDomain)
-	v1.Post("/post-item",controller.PostItem)
+	domain.Get("/get-domain",controller.GetDomain)
+	domain.Post("/post-domain", controller.PostDomain)
+	domain.Put("/put-domain/:id",controller.UpdateDomain)
+	domain.Delete("/delete-domain/:id",controller.DeleteDomain)
 
-	v1.Put("/put-bill/:id",controller.UpdateBill)
-	v1.Put("/put-domain/:id",controller.UpdateDomain)
-	v1.Put("/put-distributor/:id",controller.UpdateDistributor)
-	v1.Put("/put-item/:id",controller.UpdateItem)
+	distributor.Post("/post-distributor", controller.PostDistributor)
+	distributor.Put("/put-distributor/:id",controller.UpdateDistributor)
+	distributor.Delete("/delete-distributor/:id",controller.DeleteDistributor)
 
-
-	v1.Delete("/delete-domain/:id",controller.DeleteDomain)
-	v1.Delete("/delete-distributor/:id",controller.DeleteDistributor)
-	v1.Delete("/delete-bill/:id",controller.DeleteBill)
-	v1.Delete("/delete-item/:id",controller.DeleteItem)
-
+	bill.Post("/post-bill", controller.PostBill)
+	bill.Put("/put-bill/:id",controller.UpdateBill)
+	bill.Delete("/delete-bill/:id",controller.DeleteBill)
+	
+	item.Post("/post-item",controller.PostItem)
+	item.Put("/put-item/:id",controller.UpdateItem)
+	item.Delete("/delete-item/:id",controller.DeleteItem)
 
 }

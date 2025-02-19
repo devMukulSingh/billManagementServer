@@ -2,6 +2,8 @@ package controller
 
 import (
 	"log"
+	"time"
+
 	// "time"
 	"github.com/devMukulSingh/billManagementServer.git/db"
 	"github.com/devMukulSingh/billManagementServer.git/model"
@@ -9,52 +11,52 @@ import (
 )
 
 type Item struct {
-	ID						string	`json:"item_id"`
-	Name     				string `json:"name"`
-	Rate     				int    `json:"rate"`
-	Amount   				int    `json:"amount"`
-	Quantity 				int    `json:"quantity"`
+	ID       string `json:"item_id"`
+	Name     string `json:"name"`
+	Rate     int    `json:"rate"`
+	Amount   int    `json:"amount"`
+	Quantity int    `json:"quantity"`
 }
 type Bill struct {
-
-	DistributorId 			string `json:"distributor_id"`
-	DomainId      			string `json:"domain_id"`
-	Date        			string `json:"date"`
-	IsPaid      			bool   `json:"isPaid"`
-	Items       			[]Item `json:"items"`
-	TotalAmount 			int    `json:"totalAmount"`
+	DistributorId string    `json:"distributor_id"`
+	DomainId      string    `json:"domain_id"`
+	Date          time.Time `json:"date"`
+	IsPaid        bool      `json:"isPaid"`
+	Items         []Item    `json:"items"`
+	TotalAmount   int       `json:"totalAmount"`
 }
-
 
 func PostBill(c *fiber.Ctx) error {
 
 	body := new(Bill)
+	userId := c.Params("userId")
 	if err := c.BodyParser(body); err != nil {
 		log.Printf("error parsing request body %s", err.Error())
 		return c.Status(400).JSON("Error :error parsing request body")
 	}
-	log.Print(body)
+
 	var items []model.Item
-		for _, itemReq := range body.Items {
-			item := model.Item{
-				Name:     itemReq.Name,
-				Rate:     itemReq.Rate,
-				Amount:   itemReq.Amount,
-				Quantity: itemReq.Quantity,
-			}
-			items = append(items, item)
+	for _, itemReq := range body.Items {
+		item := model.Item{
+			Name:     itemReq.Name,
+			Rate:     itemReq.Rate,
+			Amount:   itemReq.Amount,
+			Quantity: itemReq.Quantity,
 		}
+		items = append(items, item)
+	}
 
 	result := database.DbConn.Create(&model.Bill{
+		UserID: userId,
 		Distributor: model.Distributor{
 			DomainID: body.DomainId,
 			Base: model.Base{
 				ID: body.DistributorId,
 			},
 		},
-		Items: items,
-		IsPaid: body.IsPaid,
-		Date: body.Date,
+		Items:       items,
+		IsPaid:      body.IsPaid,
+		Date:        body.Date,
 		TotalAmount: body.TotalAmount,
 		Domain: model.Domain{
 			Base: model.Base{
@@ -63,9 +65,10 @@ func PostBill(c *fiber.Ctx) error {
 		},
 	})
 	if result.Error != nil {
+
 		log.Printf("Error saving into db %s", result.Error.Error())
+
 		return c.Status(500).JSON("Internal server error")
 	}
 	return c.Status(201).JSON("bill created successfully")
 }
-

@@ -21,12 +21,13 @@ func ConnectDb() {
 	dsn := "host=" + host + " " + "user=" + user + " " + "password=" + password + " " + "dbname=" + dbName + " " + "port=" + port + " " + "sslmode=require"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Error),
+		TranslateError: true,
 	})
 
 	if err != nil {
 		log.Fatal("Database connection failed")
 	}
 	log.Print("Connection to db successfull")
-	db.AutoMigrate(&model.Bill{},&model.Distributor{},&model.Item{},&model.Domain{})
+	db.AutoMigrate(&model.User{},&model.Bill{},&model.Distributor{},&model.Item{},&model.Domain{})
 	DbConn = db
 }

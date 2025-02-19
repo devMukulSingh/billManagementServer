@@ -50,13 +50,16 @@ func Webhook(c *fiber.Ctx) error {
 			return c.Status(fiber.StatusUnauthorized).JSON("Invalid signature")
 		}
 
-		database.DbConn.Create(model.User{
+		if result := database.DbConn.Create(&model.User{
 			Name:  event.Data.First_name + " " + event.Data.Last_name,
 			Email: event.Data.Email_Addresses[0].Email_Address,
-			Base: model.Base{
-				ID: event.Data.Id,
-			},
-		})
+			ID: event.Data.Id,
+		}); result.Error != nil {
+			log.Printf("failed to create user into db %s", result.Error.Error())
+			return c.Status(500).JSON(fiber.Map{
+				"error": "failed to create user into db " + result.Error.Error(),
+			})
+		}
 		return c.Status(201).JSON("User creatd successfully")
 	}
 	return c.Status(200).JSON("Other event than user.created")

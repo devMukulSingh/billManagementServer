@@ -20,6 +20,7 @@ func main() {
 
 	app := fiber.New()
 	
+
 	app.Use(logger.New())
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: constants.BASE_URL_CLIENT,
