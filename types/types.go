@@ -23,8 +23,8 @@ type Bill struct {
 	TotalAmount   int       `json:"totalAmount"`
 }
 type Distributor struct {
-	Distributor string `json:"distributor"`
-	DomainID    string `json:"domainId"`
+	DistributorName string `json:"distributor_name"`
+	DomainID    string `json:"domain_id"`
 }
 
 type Domain struct {

@@ -39,7 +39,7 @@ func GetDistributor(c * fiber.Ctx) error{
 	if err := database.DbConn.Limit(1).Where("id =? AND user_id =?", distributorId,userId).Find(&distributor).Error; err!=nil{
 		return c.Status(500).JSON(fiber.Map{
 			"error":"Internal server error " + err.Error(),
-		})
+		}) 
 	}
 
 	return c.Status(200).JSON(distributor);
@@ -57,8 +57,8 @@ func PostDistributor(c *fiber.Ctx) error {
 	}
 
 	result := database.DbConn.Create(&model.Distributor{
-		Name:     body.Distributor,
 		DomainID: body.DomainID,
+		Name: body.DistributorName,
 		UserID: userId,
 	})
 	if result.Error != nil {
@@ -78,25 +78,25 @@ func PostDistributor(c *fiber.Ctx) error {
 }
 
 func UpdateDistributor(c *fiber.Ctx) error {
+
 	distributorId := c.Params("distributorId")
+	userId := c.Params("userId")
 
-	var exisitingDistributor model.Distributor
-
-	if result := database.DbConn.First(&exisitingDistributor, "id = ?", distributorId); result.Error != nil {
-		log.Printf("No distributor found %s", result.Error.Error())
-		return c.Status(400).JSON("No distributor found")
+	type exisitingDistributor struct{
+		Name					string			`json:"name"`
+		DomainId 				string			`json:"domain_id"`
 	}
 
-	body  := new(types.Distributor)
+	body := new(exisitingDistributor)
 
 	if err := c.BodyParser(body); err != nil {
 		log.Printf("Error parsing req body %s", err.Error())
 		return c.Status(400).JSON("Error parsing body")
 	}
-	if result := database.DbConn.Model(&exisitingDistributor).Updates(
+	if result := database.DbConn.Model(&model.Distributor{}).Where("id=? AND user_id",distributorId,userId).Updates(
 		model.Distributor{
-			Name: body.Distributor,
-			DomainID: body.DomainID,
+			Name: body.Name,
+			DomainID: body.DomainId,
 		},
 	); result.Error != nil {
 		log.Printf("Error updating distributor %s", result.Error.Error())

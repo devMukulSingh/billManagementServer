@@ -12,15 +12,15 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-func GetAllBills( c *fiber.Ctx) error{
+func GetAllBills(c *fiber.Ctx) error {
 
-	userId := c.Params("userId");
+	userId := c.Params("userId")
 
 	var bills []model.Bill
 
-	if err := database.DbConn.Where("user_id =?",userId).Find(&bills).Error; err!=nil{
+	if err := database.DbConn.Where("user_id =?", userId).Find(&bills).Error; err != nil {
 		return c.Status(500).JSON(fiber.Map{
-			"error":"Internal server error " + err.Error(),
+			"error": "Internal server error " + err.Error(),
 		})
 	}
 
@@ -28,21 +28,20 @@ func GetAllBills( c *fiber.Ctx) error{
 
 }
 
-func GetBill( c *fiber.Ctx) error{
+func GetBill(c *fiber.Ctx) error {
 
-	userId := c.Params("billId");
-	billId := c.Params("userId");
+	userId := c.Params("billId")
+	billId := c.Params("userId")
 
 	var bill model.Bill
 
-	if err := database.DbConn.Limit(1).Where("id =? AND user_id=?",billId,userId).Find(&bill).Error; err!=nil{
+	if err := database.DbConn.Limit(1).Where("id =? AND user_id=?", billId, userId).Find(&bill).Error; err != nil {
 		return c.Status(500).JSON(fiber.Map{
-			"error":"Internal server error " + err.Error(),
+			"error": "Internal server error " + err.Error(),
 		})
 	}
 	return c.Status(200).JSON(bill)
 }
-
 
 func PostBill(c *fiber.Ctx) error {
 
@@ -67,6 +66,7 @@ func PostBill(c *fiber.Ctx) error {
 	result := database.DbConn.Create(&model.Bill{
 		UserID: userId,
 		Distributor: model.Distributor{
+			UserID:   userId,
 			DomainID: body.DomainId,
 			Base: model.Base{
 				ID: body.DistributorId,
@@ -77,6 +77,7 @@ func PostBill(c *fiber.Ctx) error {
 		Date:        body.Date,
 		TotalAmount: body.TotalAmount,
 		Domain: model.Domain{
+			UserID: userId,
 			Base: model.Base{
 				ID: body.DomainId,
 			},
@@ -88,7 +89,9 @@ func PostBill(c *fiber.Ctx) error {
 
 		return c.Status(500).JSON("Internal server error")
 	}
-	return c.Status(201).JSON("bill created successfully")
+	return c.Status(201).JSON(fiber.Map{
+		"msg": "bill created successfully",
+	})
 }
 
 func UpdateBill(c *fiber.Ctx) error {
@@ -100,8 +103,8 @@ func UpdateBill(c *fiber.Ctx) error {
 		if result.Error.Error() == gorm.ErrRecordNotFound.Error() {
 			log.Print("Failed to find bill with particular id")
 			return c.Status(400).JSON(fiber.Map{
-				"error": "Bill not found", 
-			}) 
+				"error": "Bill not found",
+			})
 		}
 		return c.Status(500).JSON("Internal server error")
 	}
@@ -118,7 +121,7 @@ func UpdateBill(c *fiber.Ctx) error {
 			return err
 		}
 		return nil
-	}); err!= nil{
+	}); err != nil {
 		log.Print("Internal server errror")
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": "Failed to update bill",
@@ -139,8 +142,6 @@ func UpdateBill(c *fiber.Ctx) error {
 
 	// 	items = append(items, item)
 	// }
-
-
 
 	// result := database.DbConn.Update
 
