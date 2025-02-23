@@ -64,24 +64,13 @@ func PostBill(c *fiber.Ctx) error {
 	}
 
 	result := database.DbConn.Create(&model.Bill{
-		UserID: userId,
-		Distributor: model.Distributor{
-			UserID:   userId,
-			DomainID: body.DomainId,
-			Base: model.Base{
-				ID: body.DistributorId,
-			},
-		},
+		UserID: userId, 
+		DistributorID: body.DistributorId,
+		DomainID: body.DomainId,
 		Items:       items,
 		IsPaid:      body.IsPaid,
 		Date:        body.Date,
 		TotalAmount: body.TotalAmount,
-		Domain: model.Domain{
-			UserID: userId,
-			Base: model.Base{
-				ID: body.DomainId,
-			},
-		},
 	})
 	if result.Error != nil {
 

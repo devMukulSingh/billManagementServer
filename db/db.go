@@ -27,7 +27,9 @@ func ConnectDb() {
 	if err != nil {
 		log.Fatal("Database connection failed")
 	}
+	if err := db.AutoMigrate(&model.User{},&model.Bill{},&model.Distributor{},&model.Item{},&model.Domain{});err!= nil{
+		log.Printf("Error migrating schema - %s",err.Error())
+	}
 	log.Print("Connection to db successfull")
-	db.AutoMigrate(&model.User{},&model.Bill{},&model.Distributor{},&model.Item{},&model.Domain{})
 	DbConn = db
-}
+} 
