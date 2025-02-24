@@ -52,35 +52,42 @@ func PostBill(c *fiber.Ctx) error {
 		return c.Status(400).JSON("Error :error parsing request body")
 	}
 
-	var items []model.Item
-	for _, itemReq := range body.Items {
-		item := model.Item{
-			Name:     itemReq.Name,
-			Rate:     itemReq.Rate,
+	bills := model.Bill{
+		UserID:        userId,
+		DistributorID: body.DistributorId,
+		DomainID:      body.DomainId,
+		IsPaid:        body.IsPaid,
+		Date:          body.Date,
+		TotalAmount:   body.TotalAmount,
+		// Items
+	}
+	if err := database.DbConn.Create(&bills).Error; err != nil {
+		log.Printf("Error saving into db %s", err.Error())
+		return c.Status(500).JSON("Internal server error")
+	}
+
+	var items []model.BillItem
+	for _, itemReq := range body.BillItems {
+		item := model.BillItem{
+			ItemID: itemReq.ItemID,
 			Amount:   itemReq.Amount,
 			Quantity: itemReq.Quantity,
 		}
 		items = append(items, item)
 	}
 
-	result := database.DbConn.Create(&model.Bill{
-		UserID: userId, 
-		DistributorID: body.DistributorId,
-		DomainID: body.DomainId,
-		Items:       items,
-		IsPaid:      body.IsPaid,
-		Date:        body.Date,
-		TotalAmount: body.TotalAmount,
-	})
-	if result.Error != nil {
-
-		log.Printf("Error saving into db %s", result.Error.Error())
-
-		return c.Status(500).JSON("Internal server error")
+	if err := database.DbConn.Create(&items).Error; err != nil {
+		if errors.Is(err, gorm.ErrDuplicatedKey) {
+			log.Printf("Record already exists,try another - %s",err.Error())
+			return c.Status(409).JSON(fiber.Map{
+				"error": "Item already exists, try another",
+			})
+		}
 	}
 	return c.Status(201).JSON(fiber.Map{
 		"msg": "bill created successfully",
 	})
+
 }
 
 func UpdateBill(c *fiber.Ctx) error {

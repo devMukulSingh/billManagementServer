@@ -28,18 +28,19 @@ type User struct {
 	Bills     				[]Bill     				`json:"bills"`
 	Distributors			[]Distributor			`json:"distributors"`
 	Domains					[]Domain				`json:"domains"`
+	Items					[]Item					`json:"items"`
 }
 type Bill struct {
 	Base
-	Distributor   Distributor `json:"distributor" gorm:"not null;constraint:onDelete:CASCADE;"`
-	DistributorID string      `json:"distributor_id" gorm:"type:uuid;not null"`
-	Domain        Domain      `json:"domain" gorm:"not null;constraint:onDelete:CASCADE;"`
-	DomainID      string      `json:"domain_id" gorm:"type:uuid;not null"`
-	Items         []Item      `json:"items" gorm:"not null;many2many:bill_items; constraint:onDelete:CASCADE;"`
-	Date          time.Time      `json:"date" gorm:"not null"` 
-	IsPaid        bool        `json:"isPaid" gorm:"not null"`
-	TotalAmount   int         `json:"totalAmount" gorm:"not null"`
-	UserID      string      	`json:"user_id" gorm:"not null"`
+	Distributor   		Distributor 	`json:"distributor" gorm:"not null;constraint:onDelete:CASCADE;"`
+	DistributorID 		string      	`json:"distributor_id" gorm:"type:uuid;not null"`
+	Domain        		Domain      	`json:"domain" gorm:"not null;constraint:onDelete:CASCADE;"`
+	DomainID     		 string      	`json:"domain_id" gorm:"type:uuid;not null"`
+	Date          		time.Time     	 `json:"date" gorm:"not null"`
+	IsPaid        		bool        	`json:"isPaid" gorm:"not null"`
+	TotalAmount   		int        	 	`json:"totalAmount" gorm:"not null"`
+	UserID      		string      	`json:"user_id" gorm:"not null"`
+	BillItems			[]BillItem		`json:"bill_items" gorm:"default:[]"`
 }
 
 type Distributor struct {
@@ -57,8 +58,16 @@ type Domain struct {
 
 type Item struct {
 	Base
-	Name     string `json:"name" gorm:"not null;unique"`
-	Rate     int    `json:"rate" gorm:"not null"`
-	Amount   int    `json:"amount" gorm:"not null"`
-	Quantity int    `json:"quantity" gorm:"not null"`
+	Name     		string `json:"name" gorm:"not null;unique"`
+	Rate     		int    `json:"rate" gorm:"not null"`
+	UserID			string	`json:"user_id" gorm:"type:uuid;not null"`
+}
+type BillItem struct{
+	Base
+	Item			Item			`json:"item" gorm:"not null"`
+	Bill			Bill
+	BillID			string			`json:"bill_id" gorm:"type:uuid; not null"`
+	ItemID			string			`json:"item_id" gorm:"type:uuid; not null"`
+	Quantity		int				`json:"quantity" gorm:"not null"`
+	Amount			int				`json:"amount" gorm:"not null"`
 }

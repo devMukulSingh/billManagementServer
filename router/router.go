@@ -21,7 +21,7 @@ func SetupRoutes(app *fiber.App) {
 	domain.Get("/get-domain/:domainId",controller.GetDomain)
 	domain.Post("/post-domain", controller.PostDomain)
 	domain.Put("/put-domain/:domainId",controller.UpdateDomain)
-	domain.Delete("/delete-domain/:domainId",controller.DeleteDomain)
+	domain.Delete("/delete-domain/:domainId",controller.DeleteDomain) 
 
 	distributor.Get("/get-all-distributors",controller.GetAllDistributors)
 	distributor.Get("/get-distributor/:distributorId",controller.GetDistributor)
@@ -36,7 +36,7 @@ func SetupRoutes(app *fiber.App) {
 	bill.Delete("/delete-bill/:billId",controller.DeleteBill)
 	
 
-	item.Get("/get-all-items/:billId",controller.GetAllItems)
+	item.Get("/get-all-items",controller.GetAllItems)
 	// item.Get("/get-item",controller.GetItem)
 	item.Post("/post-item",controller.PostItem)
 	item.Put("/put-item/:itemId",controller.UpdateItem)

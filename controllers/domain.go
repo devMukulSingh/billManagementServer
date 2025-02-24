@@ -48,7 +48,7 @@ func PostDomain(c *fiber.Ctx) error {
 	}
 
 	result := database.DbConn.Create(&model.Domain{
-		Name:   body.Domain,
+		Name:   body.DomainName,
 		UserID: userId,
 	})
 	if result.Error != nil {
@@ -83,7 +83,7 @@ func UpdateDomain(c *fiber.Ctx) error {
 		log.Printf("Error parsing req body %s", err.Error())
 		return c.Status(400).JSON("Error parsing body")
 	}
-	if result := database.DbConn.Model(&existingDomain).Update("name", body.Domain); result.Error != nil {
+	if result := database.DbConn.Model(&existingDomain).Update("name", body.DomainName); result.Error != nil {
 		log.Printf("Error updating domain %s", result.Error.Error())
 		return c.Status(500).JSON("Error updating domain")
 	}

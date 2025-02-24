@@ -12,11 +12,11 @@ import (
 
 func GetAllItems(c * fiber.Ctx) error{
 	
-	billId := c.Params("billId")
+	userId := c.Params("userId")
 
 	var items []model.Item
 
-	if err := database.DbConn.Where("bill_id =?",billId).Find(&items).Error; err!=nil{
+	if err := database.DbConn.Where("user_id =?",userId).Find(&items).Error; err!=nil{
 		return c.Status(500).JSON(fiber.Map{
 			"error":"Internal server error " + err.Error(),
 		})
@@ -43,7 +43,7 @@ func GetAllItems(c * fiber.Ctx) error{
 
 func PostItem(c *fiber.Ctx) error {
 	body := new(types.Item)
-
+	userId := c.Params("userId")
 	if err := c.BodyParser(body); err != nil {
 		log.Printf("Error parsing req body %s", err.Error())
 		return c.Status(400).JSON("Error parsing body")
@@ -52,8 +52,7 @@ func PostItem(c *fiber.Ctx) error {
 	result := database.DbConn.Create(&model.Item{
 		Name: body.Name,
 		Rate: body.Rate,
-		Amount: body.Amount,
-		Quantity: body.Quantity,
+		UserID: userId,
 	})
 	if result.Error != nil {
 		log.Printf("Error in saving Items into db %s", result.Error.Error())
@@ -85,8 +84,7 @@ func UpdateItem(c *fiber.Ctx) error {
 		model.Item{
 			Name:     body.Name,
 			Rate:     body.Rate,
-			Amount:   body.Amount,
-			Quantity: body.Rate,
+			UserID: 	body.UserID,
 		},
 	); result.Error != nil {
 		log.Printf("Error updating item %s", result.Error.Error())
@@ -98,10 +96,11 @@ func UpdateItem(c *fiber.Ctx) error {
 
 func DeleteItem(c *fiber.Ctx) error {
 	itemId := c.Params("itemId")
+	userId := c.Params("userId")
 
 	var existingItem model.Item
 
-	if result := database.DbConn.First(&existingItem, "id=?", itemId); result != nil {
+	if result := database.DbConn.First(&existingItem, "id=? AND user_id=?", itemId,userId); result != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			log.Printf("No item found %s", result.Error.Error())
 			return c.Status(400).JSON("Error:No Record found")
