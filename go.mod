@@ -5,9 +5,11 @@ go 1.23.4
 require (
 	github.com/andybalholm/brotli v1.1.1 // indirect
 	github.com/clerk/clerk-sdk-go/v2 v2.2.0 // indirect
+	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/go-jose/go-jose/v3 v3.0.3 // indirect
 	github.com/gofiber/fiber/v2 v2.52.6 // indirect
 	github.com/google/uuid v1.6.0 // indirect
+	github.com/hell077/go-live-reload v0.0.0-20240729185601-f79331b69192 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.3 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect

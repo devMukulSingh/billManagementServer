@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
+	"time"
 
 	"github.com/devMukulSingh/billManagementServer.git/db"
 	"github.com/devMukulSingh/billManagementServer.git/model"
@@ -16,15 +18,66 @@ func GetAllBills(c *fiber.Ctx) error {
 
 	userId := c.Params("userId")
 
-	var bills []model.Bill
+	type Data struct{
+		Date         	time.Time 				`json:"date"`
+		IsPaid           bool   				`json:"is_paid"`
+		TotalAmount      int    				`json:"total_amount"`
+		Distributor  		json.RawMessage	 	`json:"distributor"`
+		Domain     	json.RawMessage	 				`json:"domain"`
+		BillItems		 		json.RawMessage		`json:"bill_items"`
+		// DomainID         string 				`json:"domain_id"`
+		// DistributorID    string 				`json:"distributor_id"`
+	}
+	// var data []Bills
 
-	if err := database.DbConn.Where("user_id =?", userId).Find(&bills).Error; err != nil {
+	var data []Data
+	if err := database.DbConn.Model(&model.Bill{}).
+	Joins("JOIN distributors ON distributors.id = bills.distributor_id").
+	Joins("JOIN domains ON domains.id = bills.domain_id").
+	Select(`
+	    bills.date,
+	    bills.is_paid,
+	    bills.total_amount,
+		row_to_json(distributors) as distributor,
+		row_to_json(domains) as domainbug ,
+	    (
+	      SELECT json_agg(
+	        json_build_object(
+	          'id', bi.id,
+	          'quantity', bi.quantity,
+	          'amount', bi.amount,
+	          'item', json_build_object(
+	            'id', it.id,
+	            'name', it.name,
+	            'rate', it.rate
+	          )
+	        )
+	      )
+	      FROM bill_items AS bi
+	      JOIN items AS it ON it.id = bi.item_id
+	      WHERE bi.bill_id = bills.id
+	    ) as bill_items
+	`).
+		Where("bills.user_id =?", userId).
+		Scan(&data).Error; err != nil {
 		return c.Status(500).JSON(fiber.Map{
 			"error": "Internal server error " + err.Error(),
 		})
 	}
 
-	return c.Status(200).JSON(bills)
+	// if err := database.DbConn.
+	// Preload("Distributor").
+	// Preload("Domain").
+	// Preload("BillItems").
+	// Preload("BillItems.Item").
+	// Where("user_id =?",userId).
+	// Find(&bills).Error; err != nil {
+	// 	return c.Status(500).JSON(fiber.Map{
+	// 		"error": "Internal server error " + err.Error(),
+	// 	})
+	// }
+
+	return c.Status(200).JSON(data)
 
 }
 
@@ -69,7 +122,8 @@ func PostBill(c *fiber.Ctx) error {
 	var items []model.BillItem
 	for _, itemReq := range body.BillItems {
 		item := model.BillItem{
-			ItemID: itemReq.ItemID,
+			BillID:   bills.Base.ID,
+			ItemID:   itemReq.ItemID,
 			Amount:   itemReq.Amount,
 			Quantity: itemReq.Quantity,
 		}
@@ -78,7 +132,7 @@ func PostBill(c *fiber.Ctx) error {
 
 	if err := database.DbConn.Create(&items).Error; err != nil {
 		if errors.Is(err, gorm.ErrDuplicatedKey) {
-			log.Printf("Record already exists,try another - %s",err.Error())
+			log.Printf("Record already exists,try another - %s", err.Error())
 			return c.Status(409).JSON(fiber.Map{
 				"error": "Item already exists, try another",
 			})

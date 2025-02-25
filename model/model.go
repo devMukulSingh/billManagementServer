@@ -37,10 +37,10 @@ type Bill struct {
 	Domain        		Domain      	`json:"domain" gorm:"not null;constraint:onDelete:CASCADE;"`
 	DomainID     		 string      	`json:"domain_id" gorm:"type:uuid;not null"`
 	Date          		time.Time     	 `json:"date" gorm:"not null"`
-	IsPaid        		bool        	`json:"isPaid" gorm:"not null"`
-	TotalAmount   		int        	 	`json:"totalAmount" gorm:"not null"`
+	IsPaid        		bool        	`json:"is_paid" gorm:"not null"`
+	TotalAmount   		int        	 	`json:"total_amount" gorm:"not null"`
 	UserID      		string      	`json:"user_id" gorm:"not null"`
-	BillItems			[]BillItem		`json:"bill_items" gorm:"default:[]"`
+	BillItems			[]BillItem		`json:"bill_items" `
 }
 
 type Distributor struct {
@@ -65,7 +65,6 @@ type Item struct {
 type BillItem struct{
 	Base
 	Item			Item			`json:"item" gorm:"not null"`
-	Bill			Bill
 	BillID			string			`json:"bill_id" gorm:"type:uuid; not null"`
 	ItemID			string			`json:"item_id" gorm:"type:uuid; not null"`
 	Quantity		int				`json:"quantity" gorm:"not null"`
