@@ -39,7 +39,7 @@ func GetAllBills(c *fiber.Ctx) error {
 	    bills.is_paid,
 	    bills.total_amount,
 		row_to_json(distributors) as distributor,
-		row_to_json(domains) as domainbug ,
+		row_to_json(domains) as domain,
 	    (
 	      SELECT json_agg(
 	        json_build_object(

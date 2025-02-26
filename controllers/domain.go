@@ -4,9 +4,9 @@ import (
 	"errors"
 	"log"
 
-	"github.com/devMukulSingh/billManagementServer.git/types"
 	"github.com/devMukulSingh/billManagementServer.git/db"
 	"github.com/devMukulSingh/billManagementServer.git/model"
+	"github.com/devMukulSingh/billManagementServer.git/types"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
@@ -28,14 +28,13 @@ func GetDomain(c *fiber.Ctx) error {
 	domainId := c.Params("domainId")
 
 	var domain model.Domain
-	if err := database.DbConn.Where("id = ? AND user_id = ?",domainId,userId).Limit(1).Find(&domain).Error; err != nil {
+	if err := database.DbConn.Where("id = ? AND user_id = ?", domainId, userId).Limit(1).Find(&domain).Error; err != nil {
 		return c.Status(500).JSONP(fiber.Map{
 			"error": "Internal server error " + err.Error(),
 		})
 	}
 	return c.Status(200).JSON(domain)
 }
-
 
 func PostDomain(c *fiber.Ctx) error {
 
@@ -93,18 +92,19 @@ func UpdateDomain(c *fiber.Ctx) error {
 
 func DeleteDomain(c *fiber.Ctx) error {
 	domainId := c.Params("domainId")
-	var existingDomain model.Domain
 
-	if result := database.DbConn.First(&existingDomain, "id=?", domainId); result != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			log.Printf("No domain found %s", result.Error.Error())
+	if err := database.DbConn.Where("id =?",domainId).Delete(&model.Domain{}).Error; err != nil {
+		log.Printf("Error deleting domain %s", err.Error())
+
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			log.Printf("No domain found %s", err.Error())
 			return c.Status(400).JSON("Error:No record found")
 		}
-	}
-
-	if result := database.DbConn.Delete(&existingDomain); result.Error != nil {
-
-		log.Printf("Error deleting domain %s", result.Error.Error())
+		if errors.Is(err, gorm.ErrForeignKeyViolated) {
+			return c.Status(405).JSON(fiber.Map{
+				"error": "Delete associated bills and distributors to delete domain",
+			})
+		}
 		return c.Status(500).JSON("Error deleting domain")
 	}
 
