@@ -1,8 +1,10 @@
 package controller
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
+	"time"
 
 	"github.com/devMukulSingh/billManagementServer.git/db"
 	"github.com/devMukulSingh/billManagementServer.git/model"
@@ -17,15 +19,34 @@ func GetAllDistributors(c * fiber.Ctx) error{
 
 	userId := c.Params("userId")
 
-	var distributors []model.Distributor;
+	type Distributor struct{
+		ID        		string     			`json:"id" `
+		CreatedAt 		time.Time 			 `json:"created_at"`
+		Name     		string 				`json:"name" `
+		Domain			json.RawMessage		`json:"domain"` 
+	}
 
-	if err := database.DbConn.Where("user_id =?",userId).Find(&distributors).Error; err!=nil{
+	var data []Distributor
+
+	if err := database.DbConn.Model(&model.Distributor{}).
+	Joins("JOIN domains ON domains.id = distributors.domain_id").
+	Select(`
+		distributors.id,
+		distributors.name,
+		distributors.created_at,
+		json_build_object(
+		'id' , domains.id,
+		'name',domains.name
+		) as domain
+	`).
+	Where("distributors.user_id =?",userId).
+	Scan(&data).Error; err!=nil{
 		return c.Status(500).JSON(fiber.Map{
 			"error":"Internal server error " + err.Error(),
 		})
 	}
 
-	return c.Status(200).JSON(distributors);
+	return c.Status(200).JSON(data);
 
 }
 
@@ -93,7 +114,7 @@ func UpdateDistributor(c *fiber.Ctx) error {
 		log.Printf("Error parsing req body %s", err.Error())
 		return c.Status(400).JSON("Error parsing body")
 	}
-	if result := database.DbConn.Model(&model.Distributor{}).Where("id=? AND user_id",distributorId,userId).Updates(
+	if result := database.DbConn.Model(&model.Distributor{}).Where("id=? AND user_id=?",distributorId,userId).Updates(
 		model.Distributor{
 			Name: body.Name,
 			DomainID: body.DomainId,
