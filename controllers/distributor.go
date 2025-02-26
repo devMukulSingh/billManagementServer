@@ -104,7 +104,7 @@ func UpdateDistributor(c *fiber.Ctx) error {
 	userId := c.Params("userId")
 
 	type exisitingDistributor struct{
-		Name					string			`json:"name"`
+		Name					string			`json:"distributor_name"`
 		DomainId 				string			`json:"domain_id"`
 	}
 
