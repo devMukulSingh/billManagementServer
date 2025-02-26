@@ -32,21 +32,21 @@ type User struct {
 }
 type Bill struct {
 	Base
-	Distributor   		Distributor 	`json:"distributor" gorm:"not null;constraint:onDelete:CASCADE;"`
+	Distributor   		Distributor 	`json:"distributor" gorm:"constraint:onDelete:CASCADE;"`
 	DistributorID 		string      	`json:"distributor_id" gorm:"type:uuid;not null"`
-	Domain        		Domain      	`json:"domain" gorm:"not null;constraint:onDelete:CASCADE;"`
+	Domain        		Domain      	`json:"domain" gorm:"constraint:onDelete:CASCADE;"`
 	DomainID     		 string      	`json:"domain_id" gorm:"type:uuid;not null"`
 	Date          		time.Time     	 `json:"date" gorm:"not null"`
 	IsPaid        		bool        	`json:"is_paid" gorm:"not null"`
 	TotalAmount   		int        	 	`json:"total_amount" gorm:"not null"`
 	UserID      		string      	`json:"user_id" gorm:"not null"`
-	BillItems			[]BillItem		`json:"bill_items" `
+	BillItems			[]BillItem		`json:"bill_items" gorm:"constraint:onDelete:CASCADE;"`
 }
 
 type Distributor struct {
 	Base
 	Name     		string 			`json:"name" gorm:"not null;unique"`
-	DomainID 		string 			`json:"domain_id" gorm:"type:uuid;not null"`
+	DomainID 		string 			`json:"domain_id" gorm:"type:uuid;not null"` 
 	UserID			string			`json:"user_id" gorm:"type:uuid;not null"`
 }
 
@@ -64,7 +64,7 @@ type Item struct {
 }
 type BillItem struct{
 	Base
-	Item			Item			`json:"item" gorm:"not null"`
+	Item			Item			`json:"item" gorm:"not null; constraint:onDelete:CASCADE;"`
 	BillID			string			`json:"bill_id" gorm:"type:uuid; not null"`
 	ItemID			string			`json:"item_id" gorm:"type:uuid; not null"`
 	Quantity		int				`json:"quantity" gorm:"not null"`

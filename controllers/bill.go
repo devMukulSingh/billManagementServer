@@ -11,30 +11,32 @@ import (
 	"github.com/devMukulSingh/billManagementServer.git/types"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
+	// "gorm.io/gorm/clause"
 )
 
 func GetAllBills(c *fiber.Ctx) error {
 
 	userId := c.Params("userId")
 
-	type Data struct{
-		Date         	time.Time 				`json:"date"`
-		IsPaid           bool   				`json:"is_paid"`
-		TotalAmount      int    				`json:"total_amount"`
-		Distributor  		json.RawMessage	 	`json:"distributor"`
-		Domain     	json.RawMessage	 				`json:"domain"`
-		BillItems		 		json.RawMessage		`json:"bill_items"`
-		// DomainID         string 				`json:"domain_id"`
-		// DistributorID    string 				`json:"distributor_id"`
+	type Data struct {
+		ID        string     `json:"id" gorm:"type:uuid;primary_key;"`
+		CreatedAt time.Time  `json:"created_at"`
+		Date        time.Time       `json:"date"`
+		IsPaid      bool            `json:"is_paid"`
+		TotalAmount int             `json:"total_amount"`
+		Distributor json.RawMessage `json:"distributor"`
+		Domain      json.RawMessage `json:"domain"`
+		BillItems   json.RawMessage `json:"bill_items"`
 	}
 	// var data []Bills
 
 	var data []Data
 	if err := database.DbConn.Model(&model.Bill{}).
-	Joins("JOIN distributors ON distributors.id = bills.distributor_id").
-	Joins("JOIN domains ON domains.id = bills.domain_id").
-	Select(`
+		Joins("JOIN distributors ON distributors.id = bills.distributor_id").
+		Joins("JOIN domains ON domains.id = bills.domain_id").
+		Select(`
+		bills.id,
+		bills.created_at,
 	    bills.date,
 	    bills.is_paid,
 	    bills.total_amount,
@@ -64,19 +66,6 @@ func GetAllBills(c *fiber.Ctx) error {
 			"error": "Internal server error " + err.Error(),
 		})
 	}
-
-	// if err := database.DbConn.
-	// Preload("Distributor").
-	// Preload("Domain").
-	// Preload("BillItems").
-	// Preload("BillItems.Item").
-	// Where("user_id =?",userId).
-	// Find(&bills).Error; err != nil {
-	// 	return c.Status(500).JSON(fiber.Map{
-	// 		"error": "Internal server error " + err.Error(),
-	// 	})
-	// }
-
 	return c.Status(200).JSON(data)
 
 }
@@ -199,18 +188,16 @@ func UpdateBill(c *fiber.Ctx) error {
 }
 
 func DeleteBill(c *fiber.Ctx) error {
-	billId := c.Params("billId")
-	var existingBill model.Bill
 
-	if result := database.DbConn.First(&existingBill, "id=?", billId); result != nil {
+	billId := c.Params("billId")
+
+	if result := database.DbConn.Where("id=?",billId).Delete(&model.Bill{}); 
+		result.Error != nil {
+		log.Printf("Error deleting Bill %s", result.Error.Error())
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			log.Printf("No bill found %s", result.Error.Error())
 			return c.Status(400).JSON("Error:No Record found")
 		}
-	}
-
-	if result := database.DbConn.Select(clause.Associations).Delete(&existingBill); result.Error != nil {
-		log.Printf("Error deleting Bill %s", result.Error.Error())
 		return c.Status(500).JSON("Error deleting Bill")
 	}
 
