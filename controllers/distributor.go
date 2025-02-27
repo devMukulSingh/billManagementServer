@@ -15,30 +15,32 @@ import (
 	"gorm.io/gorm"
 )
 
-
-func GetAllDistributors(c * fiber.Ctx) error{
+func GetAllDistributors(c *fiber.Ctx) error {
 
 	userId := c.Params("userId")
 
-	cached := valkeyCache.GetValue("distributors:" + userId);
-
-	if cached != ""{
-		c.Set("Content-Type","application/json")
+	cached, err := valkeyCache.GetValue("distributors:" + userId)
+	if err != nil {
+		if err.Error() != "valkey nil message" {
+			log.Printf("Error in getting cached bills : %s", err)
+		}
+	} else {
+		c.Set("Content-Type", "application/json")
 		return c.SendString(cached)
 	}
 
-	type Distributor struct{
-		ID        		string     			`json:"id" `
-		CreatedAt 		time.Time 			 `json:"created_at"`
-		Name     		string 				`json:"name" `
-		Domain			json.RawMessage		`json:"domain"` 
+	type Distributor struct {
+		ID        string          `json:"id" `
+		CreatedAt time.Time       `json:"created_at"`
+		Name      string          `json:"name" `
+		Domain    json.RawMessage `json:"domain"`
 	}
 
 	var data []Distributor
 
 	if err := database.DbConn.Model(&model.Distributor{}).
-	Joins("JOIN domains ON domains.id = distributors.domain_id").
-	Select(`
+		Joins("JOIN domains ON domains.id = distributors.domain_id").
+		Select(`
 		distributors.id,
 		distributors.name,
 		distributors.created_at,
@@ -47,25 +49,26 @@ func GetAllDistributors(c * fiber.Ctx) error{
 		'name',domains.name
 		) as domain
 	`).
-	Where("distributors.user_id =?",userId).
-	Scan(&data).Error; err!=nil{
+		Where("distributors.user_id =?", userId).
+		Scan(&data).Error; err != nil {
 		return c.Status(500).JSON(fiber.Map{
-			"error":"Internal server error " + err.Error(),
+			"error": "Internal server error " + err.Error(),
 		})
 	}
 
-	jsonString,err := json.Marshal(data); 
-	if err!=nil{
-		log.Printf("Error converting into Json: %s",err);
-		return c.Status(200).JSON(data);
+	jsonString, err := json.Marshal(data)
+	if err != nil {
+		log.Printf("Error converting into Json: %s", err)
+		return c.Status(200).JSON(data)
 	}
 
-	valkeyCache.SetValue("distributors:"+userId,jsonString)
+	if err := valkeyCache.SetValue("distributors:"+userId, jsonString); err != nil {
+		log.Printf("Error in setting value in valkey %s ", err.Error())
+	}
 
-	return c.Status(200).JSON(data);
+	return c.Status(200).JSON(data)
 
 }
-
 
 func PostDistributor(c *fiber.Ctx) error {
 
@@ -79,8 +82,8 @@ func PostDistributor(c *fiber.Ctx) error {
 
 	result := database.DbConn.Create(&model.Distributor{
 		DomainID: body.DomainID,
-		Name: body.DistributorName,
-		UserID: userId,
+		Name:     body.DistributorName,
+		UserID:   userId,
 	})
 	if result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrDuplicatedKey) {
@@ -92,7 +95,9 @@ func PostDistributor(c *fiber.Ctx) error {
 		log.Printf("Error in saving Distributor into db %s", result.Error.Error())
 		return c.Status(500).JSON("Internal server error")
 	}
-	valkeyCache.Revalidate("distributors:"+userId)
+	if err := valkeyCache.Revalidate("distributors:" + userId); err != nil {
+		log.Printf("Error in revalidating distributors cache: %s", err)
+	}
 	return c.Status(201).JSON(fiber.Map{
 		"msg": "distributor created successfully",
 	})
@@ -104,9 +109,9 @@ func UpdateDistributor(c *fiber.Ctx) error {
 	distributorId := c.Params("distributorId")
 	userId := c.Params("userId")
 
-	type exisitingDistributor struct{
-		Name					string			`json:"distributor_name"`
-		DomainId 				string			`json:"domain_id"`
+	type exisitingDistributor struct {
+		Name     string `json:"distributor_name"`
+		DomainId string `json:"domain_id"`
 	}
 
 	body := new(exisitingDistributor)
@@ -115,16 +120,18 @@ func UpdateDistributor(c *fiber.Ctx) error {
 		log.Printf("Error parsing req body %s", err.Error())
 		return c.Status(400).JSON("Error parsing body")
 	}
-	if result := database.DbConn.Model(&model.Distributor{}).Where("id=? AND user_id=?",distributorId,userId).Updates(
+	if result := database.DbConn.Model(&model.Distributor{}).Where("id=? AND user_id=?", distributorId, userId).Updates(
 		model.Distributor{
-			Name: body.Name,
+			Name:     body.Name,
 			DomainID: body.DomainId,
 		},
 	); result.Error != nil {
 		log.Printf("Error updating distributor %s", result.Error.Error())
 		return c.Status(500).JSON("Error updating distributor")
 	}
-	valkeyCache.Revalidate("distributors:"+userId)
+	if err := valkeyCache.Revalidate("distributors:" + userId); err != nil {
+		log.Printf("Error in revalidating distributors cache: %s", err)
+	}
 	return c.Status(200).JSON("distributor updated successfully")
 }
 
@@ -132,7 +139,7 @@ func DeleteDistributor(c *fiber.Ctx) error {
 	distributorId := c.Params("distributorId")
 	userId := c.Params("userId")
 
-	var existingDistributor model.Distributor;
+	var existingDistributor model.Distributor
 
 	if result := database.DbConn.First(&existingDistributor, "id=?", distributorId); result != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
@@ -144,31 +151,33 @@ func DeleteDistributor(c *fiber.Ctx) error {
 	var pgErr *pgconn.PgError
 	if result := database.DbConn.Delete(&existingDistributor); result.Error != nil {
 		if errors.As(result.Error, &pgErr) {
-		if pgErr.Code=="23503"  {
-			log.Printf("Error:Delete associated domains and bills to delete distributor. %s",result.Error.Error())
-			return c.Status(400).JSON("Error:Delete associated domains and bills to delete distributor")
-		}
+			if pgErr.Code == "23503" {
+				log.Printf("Error:Delete associated domains and bills to delete distributor. %s", result.Error.Error())
+				return c.Status(400).JSON("Error:Delete associated domains and bills to delete distributor")
+			}
 		}
 		log.Printf("Error deleting Distributor %s", result.Error.Error())
 		return c.Status(500).JSON("Error deleting Distributor")
 	}
-	valkeyCache.Revalidate("distributors:"+userId)
+	if err := valkeyCache.Revalidate("distributors:" + userId); err != nil {
+		log.Printf("Error in revalidating distributors cache: %s", err)
+	}
 	return c.Status(200).JSON("Distributor deleted successfully")
 }
 
-func GetDistributor(c * fiber.Ctx) error{
+func GetDistributor(c *fiber.Ctx) error {
 
 	distributorId := c.Params("distributorId")
 	userId := c.Params("userId")
 
-	var distributor model.Distributor;
+	var distributor model.Distributor
 
-	if err := database.DbConn.Limit(1).Where("id =? AND user_id =?", distributorId,userId).Find(&distributor).Error; err!=nil{
+	if err := database.DbConn.Limit(1).Where("id =? AND user_id =?", distributorId, userId).Find(&distributor).Error; err != nil {
 		return c.Status(500).JSON(fiber.Map{
-			"error":"Internal server error " + err.Error(),
-		}) 
+			"error": "Internal server error " + err.Error(),
+		})
 	}
 
-	return c.Status(200).JSON(distributor);
+	return c.Status(200).JSON(distributor)
 
 }

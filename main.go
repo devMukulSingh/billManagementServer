@@ -25,7 +25,10 @@ func main() {
 		AllowOrigins: constants.BASE_URL_CLIENT,
 	}))
 
-	valkeyCache.Connect();
+	if err := valkeyCache.Connect();err!=nil{
+		log.Printf("Error connecting to valkey : %s",err.Error())
+	}
+
 	database.ConnectDb()
 
 	db, err := database.DbConn.DB()

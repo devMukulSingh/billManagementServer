@@ -9,6 +9,7 @@ import (
 	"github.com/devMukulSingh/billManagementServer.git/db"
 	"github.com/devMukulSingh/billManagementServer.git/model"
 	"github.com/devMukulSingh/billManagementServer.git/types"
+	"github.com/devMukulSingh/billManagementServer.git/valkeyCache"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 	// "gorm.io/gorm/clause"
@@ -17,10 +18,19 @@ import (
 func GetAllBills(c *fiber.Ctx) error {
 
 	userId := c.Params("userId")
+	cache, err := valkeyCache.GetValue("bills:" + userId)
+	if err != nil {
+		if err.Error() != "valkey nil message" {
+			log.Printf("Error in getting cached bills : %s", err)
+		}
+	} else {
+		c.Set("Content-Type", "application/json")
+		return c.Status(200).SendString(cache)
+	}
 
 	type Data struct {
-		ID        string     `json:"id" gorm:"type:uuid;primary_key;"`
-		CreatedAt time.Time  `json:"created_at"`
+		ID          string          `json:"id" gorm:"type:uuid;primary_key;"`
+		CreatedAt   time.Time       `json:"created_at"`
 		Date        time.Time       `json:"date"`
 		IsPaid      bool            `json:"is_paid"`
 		TotalAmount int             `json:"total_amount"`
@@ -28,7 +38,6 @@ func GetAllBills(c *fiber.Ctx) error {
 		Domain      json.RawMessage `json:"domain"`
 		BillItems   json.RawMessage `json:"bill_items"`
 	}
-	// var data []Bills
 
 	var data []Data
 	if err := database.DbConn.Model(&model.Bill{}).
@@ -62,9 +71,17 @@ func GetAllBills(c *fiber.Ctx) error {
 	`).
 		Where("bills.user_id =?", userId).
 		Scan(&data).Error; err != nil {
+
 		return c.Status(500).JSON(fiber.Map{
 			"error": "Internal server error " + err.Error(),
 		})
+	}
+	jsonBills, err := json.Marshal(data)
+	if err != nil {
+		log.Printf("Error in converting to json: %s", err)
+	}
+	if err := valkeyCache.SetValue("bills:"+userId, jsonBills); err != nil {
+		log.Printf("Error in setting value in valkey %s ", err.Error())
 	}
 	return c.Status(200).JSON(data)
 
@@ -127,6 +144,9 @@ func PostBill(c *fiber.Ctx) error {
 			})
 		}
 	}
+	if err := valkeyCache.Revalidate("bills:" + userId); err != nil {
+		log.Printf("Error in revalidating bills cache: %s", err)
+	}
 	return c.Status(201).JSON(fiber.Map{
 		"msg": "bill created successfully",
 	})
@@ -136,6 +156,7 @@ func PostBill(c *fiber.Ctx) error {
 func UpdateBill(c *fiber.Ctx) error {
 
 	billId := c.Params("billId")
+	userId := c.Params("userId")
 
 	var existingBill model.Bill
 	if result := database.DbConn.First(&existingBill, "id = ?", billId); result.Error != nil {
@@ -166,33 +187,18 @@ func UpdateBill(c *fiber.Ctx) error {
 			"error": "Failed to update bill",
 		})
 	}
-
-	// var items []model.Item
-	// for _, itemReq := range body.Items {
-	// 	item := model.Item{
-	// 		Base: model.Base{
-	// 			ID: itemReq.ID,
-	// 		},
-	// 		Name:     itemReq.Name,
-	// 		Rate:     itemReq.Rate,
-	// 		Amount:   itemReq.Amount,
-	// 		Quantity: itemReq.Quantity,
-	// 	}
-
-	// 	items = append(items, item)
-	// }
-
-	// result := database.DbConn.Update
-
+	if err := valkeyCache.Revalidate("bills:" + userId); err != nil {
+		log.Printf("Error in revalidating bills cache: %s", err)
+	}
 	return c.Status(200).JSON("bill updated successfully")
 }
 
 func DeleteBill(c *fiber.Ctx) error {
 
 	billId := c.Params("billId")
+	userId := c.Params("userId")
 
-	if result := database.DbConn.Where("id=?",billId).Delete(&model.Bill{}); 
-		result.Error != nil {
+	if result := database.DbConn.Where("id=?", billId).Delete(&model.Bill{}); result.Error != nil {
 		log.Printf("Error deleting Bill %s", result.Error.Error())
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			log.Printf("No bill found %s", result.Error.Error())
@@ -200,6 +206,8 @@ func DeleteBill(c *fiber.Ctx) error {
 		}
 		return c.Status(500).JSON("Error deleting Bill")
 	}
-
+	if err := valkeyCache.Revalidate("bills:" + userId); err != nil {
+		log.Printf("Error in revalidating bills cache: %s", err)
+	}
 	return c.Status(200).JSON("Bill deleted successfully")
 }

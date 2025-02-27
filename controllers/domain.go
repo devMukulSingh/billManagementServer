@@ -18,8 +18,12 @@ func GetAllDomains(c *fiber.Ctx) error {
 	userId := c.Params("userId")
 
 	//valkey cache
-	cache := valkeyCache.GetValue("domains:" + userId)
-	if cache != "" {
+	cache, err := valkeyCache.GetValue("domains:" + userId)
+	if err != nil {
+		if err.Error() != "valkey nil message" {
+			log.Printf("Error in getting cached bills : %s", err)
+		}
+	} else {
 		c.Set("Content-Type", "application/json")
 		return c.Status(200).SendString(cache)
 	}
@@ -34,10 +38,11 @@ func GetAllDomains(c *fiber.Ctx) error {
 	if err != nil {
 		log.Print("error converting to json")
 	}
-	valkeyCache.SetValue("domains:"+userId, jsonDomain)
+	if err := valkeyCache.SetValue("domains:"+userId, jsonDomain); err != nil {
+		log.Printf("Error in setting value in valkey %s ", err.Error())
+	}
 	return c.Status(200).JSON(domains)
 }
-
 
 func PostDomain(c *fiber.Ctx) error {
 
@@ -50,7 +55,7 @@ func PostDomain(c *fiber.Ctx) error {
 	}
 
 	result := database.DbConn.Create(&model.Domain{
-		Name:   body.DomainName 		,
+		Name:   body.DomainName,
 		UserID: userId,
 	})
 	if result.Error != nil {
@@ -75,7 +80,6 @@ func UpdateDomain(c *fiber.Ctx) error {
 	domainId := c.Params("domainId")
 	userId := c.Params("userId")
 
-
 	var existingDomain model.Domain
 
 	if result := database.DbConn.First(&existingDomain, "id = ?", domainId); result.Error != nil {
@@ -93,7 +97,9 @@ func UpdateDomain(c *fiber.Ctx) error {
 		log.Printf("Error updating domain %s", result.Error.Error())
 		return c.Status(500).JSON("Error updating domain")
 	}
-	valkeyCache.Revalidate("domains:" + userId)
+	if err := valkeyCache.Revalidate("domains:" + userId); err != nil {
+		log.Printf("Error in revalidating domains cache: %s", err)
+	}
 	return c.Status(200).JSON("domain updated successfully")
 }
 
@@ -113,13 +119,14 @@ func DeleteDomain(c *fiber.Ctx) error {
 				"error": "Delete associated bills and distributors to delete domain",
 			})
 		}
-		
+
 		return c.Status(500).JSON("Error deleting domain")
 	}
-	valkeyCache.Revalidate("domains:" + userId)
+	if err := valkeyCache.Revalidate("domains:" + userId); err != nil {
+		log.Printf("Error in revalidating domains cache: %s", err)
+	}
 	return c.Status(200).JSON("domain deleted successfully")
 }
-
 
 func GetDomain(c *fiber.Ctx) error {
 
