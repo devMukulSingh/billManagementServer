@@ -11,9 +11,9 @@ type Param struct {
 }
 
 type Item struct {
-	Name   string `json:"name" `
+	Name   string `json:"name"`
 	Rate   int    `json:"rate"`
-	UserID string `json:"user_id"`
+	UserID string `json:"user_id" `
 }
 
 type Bill struct {

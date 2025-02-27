@@ -80,20 +80,17 @@ func UpdateDomain(c *fiber.Ctx) error {
 	domainId := c.Params("domainId")
 	userId := c.Params("userId")
 
-	var existingDomain model.Domain
-
-	if result := database.DbConn.First(&existingDomain, "id = ?", domainId); result.Error != nil {
-		log.Printf("No domain found %s", result.Error.Error())
-		return c.Status(400).JSON("No domain found")
-	}
-
 	body := new(types.Domain)
 
 	if err := c.BodyParser(body); err != nil {
 		log.Printf("Error parsing req body %s", err.Error())
 		return c.Status(400).JSON("Error parsing body")
 	}
-	if result := database.DbConn.Model(&existingDomain).Update("name", body.DomainName); result.Error != nil {
+	if result := database.DbConn.Model(&model.Domain{}).Where("id=? AND user_id",domainId,userId).Update("name", body.DomainName); result.Error != nil {
+		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+			log.Printf("No domain found %s", result.Error.Error())
+			return c.Status(400).JSON("No domain found")
+		}
 		log.Printf("Error updating domain %s", result.Error.Error())
 		return c.Status(500).JSON("Error updating domain")
 	}
