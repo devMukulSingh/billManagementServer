@@ -13,6 +13,5 @@ func ValidateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	c.Set("userId",param.UserId)
 	return c.Next();
 }

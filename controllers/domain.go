@@ -1,40 +1,43 @@
 package controller
 
 import (
+	"encoding/json"
 	"errors"
 	"log"
 
 	"github.com/devMukulSingh/billManagementServer.git/db"
 	"github.com/devMukulSingh/billManagementServer.git/model"
 	"github.com/devMukulSingh/billManagementServer.git/types"
+	"github.com/devMukulSingh/billManagementServer.git/valkeyCache"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
 )
 
 func GetAllDomains(c *fiber.Ctx) error {
+
 	userId := c.Params("userId")
+
+	//valkey cache
+	cache := valkeyCache.GetValue("domains:" + userId)
+	if cache != "" {
+		c.Set("Content-Type", "application/json")
+		return c.Status(200).SendString(cache)
+	}
+
 	var domains []model.Domain
 	if err := database.DbConn.Find(&domains, "user_id=?", userId).Error; err != nil {
 		return c.Status(500).JSONP(fiber.Map{
 			"error": "Internal server error " + err.Error(),
 		})
 	}
+	jsonDomain, err := json.Marshal(domains)
+	if err != nil {
+		log.Print("error converting to json")
+	}
+	valkeyCache.SetValue("domains:"+userId, jsonDomain)
 	return c.Status(200).JSON(domains)
 }
 
-func GetDomain(c *fiber.Ctx) error {
-
-	userId := c.Params("userId")
-	domainId := c.Params("domainId")
-
-	var domain model.Domain
-	if err := database.DbConn.Where("id = ? AND user_id = ?", domainId, userId).Limit(1).Find(&domain).Error; err != nil {
-		return c.Status(500).JSONP(fiber.Map{
-			"error": "Internal server error " + err.Error(),
-		})
-	}
-	return c.Status(200).JSON(domain)
-}
 
 func PostDomain(c *fiber.Ctx) error {
 
@@ -47,7 +50,7 @@ func PostDomain(c *fiber.Ctx) error {
 	}
 
 	result := database.DbConn.Create(&model.Domain{
-		Name:   body.DomainName,
+		Name:   body.DomainName 		,
 		UserID: userId,
 	})
 	if result.Error != nil {
@@ -61,6 +64,8 @@ func PostDomain(c *fiber.Ctx) error {
 		return c.Status(500).JSON("Internal server error")
 	}
 
+	//revalidate cache
+	valkeyCache.Revalidate("domains:" + userId)
 	return c.Status(201).JSON(fiber.Map{
 		"msg": "domain created successfully",
 	})
@@ -68,6 +73,8 @@ func PostDomain(c *fiber.Ctx) error {
 
 func UpdateDomain(c *fiber.Ctx) error {
 	domainId := c.Params("domainId")
+	userId := c.Params("userId")
+
 
 	var existingDomain model.Domain
 
@@ -86,14 +93,15 @@ func UpdateDomain(c *fiber.Ctx) error {
 		log.Printf("Error updating domain %s", result.Error.Error())
 		return c.Status(500).JSON("Error updating domain")
 	}
-
+	valkeyCache.Revalidate("domains:" + userId)
 	return c.Status(200).JSON("domain updated successfully")
 }
 
 func DeleteDomain(c *fiber.Ctx) error {
 	domainId := c.Params("domainId")
+	userId := c.Params("userId")
 
-	if err := database.DbConn.Where("id =?",domainId).Delete(&model.Domain{}).Error; err != nil {
+	if err := database.DbConn.Where("id =?", domainId).Delete(&model.Domain{}).Error; err != nil {
 		log.Printf("Error deleting domain %s", err.Error())
 
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -105,8 +113,24 @@ func DeleteDomain(c *fiber.Ctx) error {
 				"error": "Delete associated bills and distributors to delete domain",
 			})
 		}
+		
 		return c.Status(500).JSON("Error deleting domain")
 	}
-
+	valkeyCache.Revalidate("domains:" + userId)
 	return c.Status(200).JSON("domain deleted successfully")
+}
+
+
+func GetDomain(c *fiber.Ctx) error {
+
+	userId := c.Params("userId")
+	domainId := c.Params("domainId")
+
+	var domain model.Domain
+	if err := database.DbConn.Where("id = ? AND user_id = ?", domainId, userId).Limit(1).Find(&domain).Error; err != nil {
+		return c.Status(500).JSONP(fiber.Map{
+			"error": "Internal server error " + err.Error(),
+		})
+	}
+	return c.Status(200).JSON(domain)
 }

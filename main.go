@@ -4,9 +4,10 @@ import (
 	"log"
 
 	"github.com/devMukulSingh/billManagementServer.git/db"
-	 "github.com/devMukulSingh/billManagementServer.git/lib"
+	"github.com/devMukulSingh/billManagementServer.git/lib"
 	"github.com/devMukulSingh/billManagementServer.git/router"
-	"github.com/gofiber/fiber/v2"   
+	"github.com/devMukulSingh/billManagementServer.git/valkeyCache"
+	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/joho/godotenv"
@@ -14,18 +15,17 @@ import (
 
 func main() {
 	if err := godotenv.Load(".env"); err != nil {
-		log.Fatal("Error loading dotenv") 
+		log.Fatal("Error loading dotenv")
 	}
 
 	app := fiber.New()
-	
 
 	app.Use(logger.New())
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: constants.BASE_URL_CLIENT,
 	}))
 
-
+	valkeyCache.Connect();
 	database.ConnectDb()
 
 	db, err := database.DbConn.DB()

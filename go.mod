@@ -29,6 +29,7 @@ require (
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/satori/go.uuid v1.2.0 // indirect
 	github.com/svix/svix-webhooks v1.56.0 // indirect
+	github.com/valkey-io/valkey-go v1.0.55 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.58.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect

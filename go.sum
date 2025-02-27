@@ -67,6 +67,8 @@ github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81P
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/svix/svix-webhooks v1.56.0 h1:FpsF+hZGPOCBBt+DkQxUjtLfjx8bRo1OxyXodbSrTZQ=
 github.com/svix/svix-webhooks v1.56.0/go.mod h1:PsrogJ6k7lqSSpsIIc3dGdIpETnu5gWwM6BS6sa4Jz4=
+github.com/valkey-io/valkey-go v1.0.55 h1:mvsiXNwHO9YrkBPzumrnFNhDAmVkZxyQsiAm6Y4c/Bg=
+github.com/valkey-io/valkey-go v1.0.55/go.mod h1:yYgsDepzuxY1NjAzpmt5QV6BLCvRXyJ/M27NuaznGd4=
 github.com/valyala/bytebufferpool v1.0.0 h1:GqA5TC/0021Y/b9FG4Oi9Mr3q7XYx6KllzawFIhcdPw=
 github.com/valyala/bytebufferpool v1.0.0/go.mod h1:6bBcMArwyJ5K/AmCkWv1jt77kVWyCJ6HpOuEn7z0Csc=
 github.com/valyala/fasthttp v1.51.0 h1:8b30A5JlZ6C7AS81RsWjYMQmrZG6feChmgAolCl1SqA=
