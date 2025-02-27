@@ -138,9 +138,8 @@ func UpdateDistributor(c *fiber.Ctx) error {
 func DeleteDistributor(c *fiber.Ctx) error {
 	distributorId := c.Params("distributorId")
 	userId := c.Params("userId")
-
 	var pgErr *pgconn.PgError
-	if result := database.DbConn.Where("id=? AND user_id",distributorId,userId).Delete(&model.Distributor{}); result.Error != nil {
+	if result := database.DbConn.Where("id=? AND user_id=?",distributorId,userId).Delete(&model.Distributor{}); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			log.Printf("No distributor found %s", result.Error.Error())
 			return c.Status(400).JSON("Error:No Record found")
