@@ -5,29 +5,32 @@ import (
 	"errors"
 	"log"
 	"time"
-	// "github.com/go-playground/validator/v10"
 	"github.com/devMukulSingh/billManagementServer.git/db"
 	"github.com/devMukulSingh/billManagementServer.git/model"
 	"github.com/devMukulSingh/billManagementServer.git/types"
-	"github.com/devMukulSingh/billManagementServer.git/valkeyCache"
 	"github.com/gofiber/fiber/v2"
 	"gorm.io/gorm"
+	// "github.com/go-playground/validator/v10"
+	// "github.com/devMukulSingh/billManagementServer.git/valkeyCache"
 	// "gorm.io/gorm/clause"
 )
 
 func GetAllBills(c *fiber.Ctx) error {
 
 	userId := c.Params("userId")
-	cache, err := valkeyCache.GetValue("bills:" + userId)
-	if err != nil {
-		if err.Error() != "valkey nil message" {
-			log.Printf("Error in getting cached bills : %s", err)
-		}
-	} else {
-		c.Set("Content-Type", "application/json")
-		return c.Status(200).SendString(cache)
-	}
+	page := c.QueryInt("page", 1)
+	limit := c.QueryInt("limit", 10)
 
+	// cache, err := valkeyCache.GetValue("bills:" + userId)
+	// if err != nil {
+	// 	if err.Error() != "valkey nil message" {
+	// 		log.Printf("Error in getting cached bills : %s", err)
+	// 	}
+	// } else {
+	// 	c.Set("Content-Type", "application/json")
+	// 	return c.Status(200).SendString(cache)
+	// }
+	var count int64;
 	type Data struct {
 		ID          string          `json:"id" gorm:"type:uuid;primary_key;"`
 		CreatedAt   time.Time       `json:"created_at"`
@@ -38,9 +41,15 @@ func GetAllBills(c *fiber.Ctx) error {
 		Domain      json.RawMessage `json:"domain"`
 		BillItems   json.RawMessage `json:"bill_items"`
 	}
-
+	type Response struct {
+		Data  	[]Data 			`json:"data"`
+		Count 	int64          	`json:"count"`
+	}
 	var data []Data
 	if err := database.DbConn.Model(&model.Bill{}).
+		Limit(limit).
+		Offset((page-1) * limit).
+		Count(&count).
 		Joins("JOIN distributors ON distributors.id = bills.distributor_id").
 		Joins("JOIN domains ON domains.id = bills.domain_id").
 		Select(`
@@ -76,14 +85,18 @@ func GetAllBills(c *fiber.Ctx) error {
 			"error": "Internal server error " + err.Error(),
 		})
 	}
-	jsonBills, err := json.Marshal(data)
-	if err != nil {
-		log.Printf("Error in converting to json: %s", err)
+	response := Response{
+		Data: data,
+		Count: count,
 	}
-	if err := valkeyCache.SetValue("bills:"+userId, jsonBills); err != nil {
-		log.Printf("Error in setting value in valkey %s ", err.Error())
-	}
-	return c.Status(200).JSON(data)
+	// jsonBills, err := json.Marshal(data)
+	// if err != nil {
+	// 	log.Printf("Error in converting to json: %s", err)
+	// }
+	// if err := valkeyCache.SetValue("bills:"+userId, jsonBills); err != nil {
+	// 	log.Printf("Error in setting value in valkey %s ", err.Error())
+	// }
+	return c.Status(200).JSON(response)
 
 }
 
@@ -144,9 +157,9 @@ func PostBill(c *fiber.Ctx) error {
 			})
 		}
 	}
-	if err := valkeyCache.Revalidate("bills:" + userId); err != nil {
-		log.Printf("Error in revalidating bills cache: %s", err)
-	}
+	// if err := valkeyCache.Revalidate("bills:" + userId); err != nil {
+	// 	log.Printf("Error in revalidating bills cache: %s", err)
+	// }
 	return c.Status(201).JSON(fiber.Map{
 		"msg": "bill created successfully",
 	})
@@ -183,9 +196,9 @@ func UpdateBill(c *fiber.Ctx) error {
 			"error": "Failed to update bill",
 		})
 	}
-	if err := valkeyCache.Revalidate("bills:" + userId); err != nil {
-		log.Printf("Error in revalidating bills cache: %s", err)
-	}
+	// if err := valkeyCache.Revalidate("bills:" + userId); err != nil {
+	// 	log.Printf("Error in revalidating bills cache: %s", err)
+	// }
 	return c.Status(200).JSON("bill updated successfully")
 }
 
@@ -194,7 +207,8 @@ func DeleteBill(c *fiber.Ctx) error {
 	billId := c.Params("billId")
 	userId := c.Params("userId")
 
-	if result := database.DbConn.Where("id=?", billId).Delete(&model.Bill{}); result.Error != nil {
+	if result := database.DbConn.Where("id=? AND user_id=?", billId,userId).
+	Delete(&model.Bill{}); result.Error != nil {
 		log.Printf("Error deleting Bill %s", result.Error.Error())
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			log.Printf("No bill found %s", result.Error.Error())
@@ -202,8 +216,8 @@ func DeleteBill(c *fiber.Ctx) error {
 		}
 		return c.Status(500).JSON("Error deleting Bill")
 	}
-	if err := valkeyCache.Revalidate("bills:" + userId); err != nil {
-		log.Printf("Error in revalidating bills cache: %s", err)
-	}
+	// if err := valkeyCache.Revalidate("bills:" + userId); err != nil {
+	// 	log.Printf("Error in revalidating bills cache: %s", err)
+	// }
 	return c.Status(200).JSON("Bill deleted successfully")
 }

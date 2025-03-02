@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"log"
-	"strconv"
+
 	"time"
 
 	"github.com/devMukulSingh/billManagementServer.git/db"
@@ -19,9 +19,10 @@ import (
 func GetAllDistributors(c *fiber.Ctx) error {
 
 	userId := c.Params("userId")
-	page := c.Query("page")
+	page := c.QueryInt("page", 1)
+	limit := c.QueryInt("limit", 10)
 	// cached, err := valkeyCache.GetValue("distributors:" + page + ":" + userId)
-	
+
 	// if err != nil {
 	// 	if err.Error() != "valkey nil message" {
 	// 		log.Printf("Error in getting cached bills : %s", err)
@@ -40,11 +41,8 @@ func GetAllDistributors(c *fiber.Ctx) error {
 
 	var data []Distributor
 	var count int64
-	pageInt, err := strconv.Atoi(page)
-	if err != nil {
-		log.Print("Error converting page to Int")
-	}
-	if err := database.DbConn.Model(&model.Distributor{}).Count(&count).Offset((pageInt-1)*10).Limit(10).
+
+	if err := database.DbConn.Model(&model.Distributor{}).Count(&count).Offset((page-1)*limit).Limit(limit).
 		Joins("JOIN domains ON domains.id = distributors.domain_id").
 		Select(`
 		distributors.id,
@@ -61,13 +59,12 @@ func GetAllDistributors(c *fiber.Ctx) error {
 			"error": "Internal server error " + err.Error(),
 		})
 	}
-
-	type Result struct {
-		Data   []Distributor			`json:"data"`
-		Count int64							`json:"count"`
+	type Response struct {
+		Data  []Distributor `json:"data"`
+		Count int64          	`json:"count"`
 	}
-	result := Result{
-		Data:   data,
+	result := Response{
+		Data:  data,
 		Count: count,
 	}
 	// jsonString, err := json.Marshal(result)

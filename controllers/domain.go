@@ -17,12 +17,12 @@ import (
 func GetAllDomains(c *fiber.Ctx) error {
 
 	userId := c.Params("userId")
-	page := c.QueryInt("page",1)
-	limit :=c.QueryInt("limit",10)
+	page := c.QueryInt("page", 1)
+	limit := c.QueryInt("limit", 10)
 
-	if err := c.QueryParser(&types.Query{}); err!=nil{
+	if err := c.QueryParser(&types.Query{}); err != nil {
 		return c.Status(400).JSON(fiber.Map{
-			"error":err,
+			"error": err,
 		})
 	}
 
@@ -49,9 +49,13 @@ func GetAllDomains(c *fiber.Ctx) error {
 			"error": "Internal server error " + err.Error(),
 		})
 	}
-	response := types.Response{
-		Data: 	domains,
-		Count:   count,
+	type Response struct {
+		Data  []model.Domain `json:"data"`
+		Count int64          `json:"count"`
+	}
+	response := Response{
+		Data:  domains,
+		Count: count,
 	}
 	// jsonDomain, err := json.Marshal(domains)
 	// if err != nil {
@@ -123,7 +127,7 @@ func DeleteDomain(c *fiber.Ctx) error {
 	domainId := c.Params("domainId")
 	userId := c.Params("userId")
 
-	if err := database.DbConn.Where("id =? AND user_id=?", domainId,userId).Delete(&model.Domain{}).Error; err != nil {
+	if err := database.DbConn.Where("id =? AND user_id=?", domainId, userId).Delete(&model.Domain{}).Error; err != nil {
 		log.Printf("Error deleting domain %s", err.Error())
 
 		if errors.Is(err, gorm.ErrRecordNotFound) {

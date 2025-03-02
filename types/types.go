@@ -32,10 +32,7 @@ type Distributor struct {
 type Domain struct {
 	DomainName string `json:"domain_name"`
 }
-type Response struct {
-	Data  []model.Domain `json:"data"`
-	Count int64          `json:"count"`
-}
+
 type Query struct {
 	UserId string `query:"user_id"`
 	Page   string `query:"page"`
