@@ -63,11 +63,11 @@ func GetAllDistributors(c *fiber.Ctx) error {
 	}
 
 	type Result struct {
-		Distributors   []Distributor		`json:"distributors"`
+		Data   []Distributor			`json:"data"`
 		Count int64							`json:"count"`
 	}
 	result := Result{
-		Distributors:   data,
+		Data:   data,
 		Count: count,
 	}
 	// jsonString, err := json.Marshal(result)
