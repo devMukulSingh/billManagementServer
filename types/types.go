@@ -6,11 +6,12 @@ import (
 	"github.com/devMukulSingh/billManagementServer.git/model"
 )
 
+//Request body types
 type Param struct {
 	UserId string `params:"userId"`
 }
 
-type Item struct {
+type Product struct {
 	Name   string `json:"name"`
 	Rate   int    `json:"rate"`
 	UserID string `json:"user_id" `

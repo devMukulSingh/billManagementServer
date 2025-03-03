@@ -17,6 +17,37 @@ import (
 func GetAllDomains(c *fiber.Ctx) error {
 
 	userId := c.Params("userId")
+
+	if err := c.QueryParser(&types.Query{}); err != nil {
+		return c.Status(400).JSON(fiber.Map{
+			"error": err,
+		})
+	}
+
+	var count int64
+	var domains []model.Domain
+	if err := database.DbConn.
+		Model(&model.Domain{}).
+		Count(&count).
+		Find(&domains, "user_id=?", userId).Error; err != nil {
+		return c.Status(500).JSONP(fiber.Map{
+			"error": "Internal server error " + err.Error(),
+		})
+	}
+	type Response struct {
+		Data  []model.Domain `json:"data"`
+		Count int64          `json:"count"`
+	}
+	response := Response{
+		Data:  domains,
+		Count: count,
+	}
+
+	return c.Status(200).JSON(response)
+}
+func GetDomains(c *fiber.Ctx) error {
+
+userId := c.Params("userId")
 	page := c.QueryInt("page", 1)
 	limit := c.QueryInt("limit", 10)
 
@@ -148,16 +179,3 @@ func DeleteDomain(c *fiber.Ctx) error {
 	return c.Status(200).JSON("domain deleted successfully")
 }
 
-func GetDomain(c *fiber.Ctx) error {
-
-	userId := c.Params("userId")
-	domainId := c.Params("domainId")
-
-	var domain model.Domain
-	if err := database.DbConn.Where("id = ? AND user_id = ?", domainId, userId).Limit(1).Find(&domain).Error; err != nil {
-		return c.Status(500).JSONP(fiber.Map{
-			"error": "Internal server error " + err.Error(),
-		})
-	}
-	return c.Status(200).JSON(domain)
-}

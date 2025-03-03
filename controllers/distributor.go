@@ -16,7 +16,7 @@ import (
 	"gorm.io/gorm"
 )
 
-func GetAllDistributors(c *fiber.Ctx) error {
+func GetDistributors(c *fiber.Ctx) error {
 
 	userId := c.Params("userId")
 	page := c.QueryInt("page", 1)
@@ -75,6 +75,50 @@ func GetAllDistributors(c *fiber.Ctx) error {
 	// if err := valkeyCache.SetValue("distributors:"+page+":"+userId, jsonString); err != nil {
 	// 	log.Printf("Error in setting value in valkey %s ", err.Error())
 	// }
+	return c.Status(200).JSON(result)
+
+}
+
+func GetAllDistributors(c *fiber.Ctx) error {
+
+	userId := c.Params("userId")
+
+	type Distributor struct {
+		ID        string          `json:"id" `
+		CreatedAt time.Time       `json:"created_at"`
+		Name      string          `json:"name" `
+		Domain    json.RawMessage `json:"domain"`
+	}
+
+	var data []Distributor
+	var count int64
+
+	if err := database.DbConn.Model(&model.Distributor{}).
+		Joins("JOIN domains ON domains.id = distributors.domain_id").
+		Select(`
+		distributors.id,
+		distributors.name,
+		distributors.created_at,
+		json_build_object(
+		'id' , domains.id,
+		'name',domains.name
+		) as domain
+	`).
+		Where("distributors.user_id =?", userId).
+		Scan(&data).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Internal server error " + err.Error(),
+		})
+	}
+	type Response struct {
+		Data  []Distributor `json:"data"`
+		Count int64          	`json:"count"`
+	}
+	result := Response{
+		Data:  data,
+		Count: count,
+	}
+
 	return c.Status(200).JSON(result)
 
 }
@@ -168,19 +212,3 @@ func DeleteDistributor(c *fiber.Ctx) error {
 	return c.Status(200).JSON("Distributor deleted successfully")
 }
 
-func GetDistributor(c *fiber.Ctx) error {
-
-	distributorId := c.Params("distributorId")
-	userId := c.Params("userId")
-
-	var distributor model.Distributor
-
-	if err := database.DbConn.Limit(1).Where("id =? AND user_id =?", distributorId, userId).Find(&distributor).Error; err != nil {
-		return c.Status(500).JSON(fiber.Map{
-			"error": "Internal server error " + err.Error(),
-		})
-	}
-
-	return c.Status(200).JSON(distributor)
-
-}

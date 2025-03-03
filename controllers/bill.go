@@ -142,7 +142,7 @@ func PostBill(c *fiber.Ctx) error {
 	for _, itemReq := range body.BillItems {
 		item := model.BillItem{
 			BillID:   bills.Base.ID,
-			ItemID:   itemReq.ItemID,
+			ProductID:   itemReq.ProductID,
 			Amount:   itemReq.Amount,
 			Quantity: itemReq.Quantity,
 		}
