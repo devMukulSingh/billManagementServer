@@ -140,7 +140,7 @@ func UpdateDomain(c *fiber.Ctx) error {
 		log.Printf("Error parsing req body %s", err.Error())
 		return c.Status(400).JSON("Error parsing body")
 	}
-	if result := database.DbConn.Model(&model.Domain{}).Where("id=? AND user_id", domainId, userId).Update("name", body.DomainName); result.Error != nil {
+	if result := database.DbConn.Model(&model.Domain{}).Where("id=? AND user_id=?", domainId, userId).Update("name", body.DomainName); result.Error != nil {
 		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
 			log.Printf("No domain found %s", result.Error.Error())
 			return c.Status(400).JSON("No domain found")

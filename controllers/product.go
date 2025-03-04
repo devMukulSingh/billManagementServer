@@ -147,7 +147,7 @@ func PostProduct(c *fiber.Ctx) error {
 
 func UpdateProduct(c *fiber.Ctx) error {
 	productId := c.Params("productId")
-	userId := c.Params("user_id")
+	userId := c.Params("userId")
 
 	body := new(types.Product)
 
@@ -155,7 +155,7 @@ func UpdateProduct(c *fiber.Ctx) error {
 		log.Printf("Error parsing req body %s", err.Error())
 		return c.Status(400).JSON("Error parsing body")
 	}
-	if result := database.DbConn.Where("id=? AND product_id=?",productId,userId).Model(&model.Product{}).Updates(
+	if result := database.DbConn.Where("id=? AND user_id=?",productId,userId).Model(&model.Product{}).Updates(
 		model.Product{
 			Name:   body.Name,
 			Rate:   body.Rate,

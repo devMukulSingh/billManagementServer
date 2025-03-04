@@ -66,7 +66,7 @@ func GetAllBills(c *fiber.Ctx) error {
 	          'id', bi.id,
 	          'quantity', bi.quantity,
 	          'amount', bi.amount,
-	          'item', json_build_object(
+	          'product', json_build_object(
 	            'id', it.id,
 	            'name', it.name,
 	            'rate', it.rate
@@ -74,7 +74,7 @@ func GetAllBills(c *fiber.Ctx) error {
 	        )
 	      )
 	      FROM bill_items AS bi
-	      JOIN items AS it ON it.id = bi.item_id
+	      JOIN products AS it ON it.id = bi.product_id
 	      WHERE bi.bill_id = bills.id
 	    ) as bill_items
 	`).
