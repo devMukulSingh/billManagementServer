@@ -2,54 +2,54 @@ package controller
 
 import (
 	// "encoding/json"
-	"errors"
+	// "errors"
+	// "database/sql"
 	"log"
 
-	"github.com/devMukulSingh/billManagementServer.git/db"
-	"github.com/devMukulSingh/billManagementServer.git/model"
+	"github.com/devMukulSingh/billManagementServer.git/database"
+	"github.com/devMukulSingh/billManagementServer.git/dbConnection"
 	"github.com/devMukulSingh/billManagementServer.git/types"
+// 
+	// "github.com/devMukulSingh/billManagementServer.git/db"
+	// "github.com/devMukulSingh/billManagementServer.git/model"
+	// "github.com/jackc/pgx/v5/pgtype"
 
 	// "github.com/devMukulSingh/billManagementServer.git/valkeyCache"
 	"github.com/gofiber/fiber/v2"
-	"gorm.io/gorm"
 )
 
 func GetAllDomains(c *fiber.Ctx) error {
 
-	userId := c.Params("userId")
-
-	if err := c.QueryParser(&types.Query{}); err != nil {
+	var params types.DomainParams
+	if err := c.ParamsParser(&params); err!=nil{
+		log.Printf("Error parsing userId in params : %s",err.Error())
 		return c.Status(400).JSON(fiber.Map{
-			"error": err,
+			"error":"Error parsing userId in params",
 		})
 	}
 
-	var count int64
-	var domains []model.Domain
-	if err := database.DbConn.
-		Model(&model.Domain{}).
-		Count(&count).
-		Find(&domains, "user_id=?", userId).Error; err != nil {
-		return c.Status(500).JSONP(fiber.Map{
-			"error": "Internal server error " + err.Error(),
-		})
-	}
 	type Response struct {
-		Data  []model.Domain `json:"data"`
-		Count int64          `json:"count"`
+		Data  interface{} 		`json:"data"`
+		Count int64          	`json:"count"`
 	}
+	data,err := dbconnection.Queries.GetAllDomains(dbconnection.Ctx,params.UserID);
+
+	if err!=nil{
+		log.Print(err.Error())
+	}
+
 	response := Response{
-		Data:  domains,
-		Count: count,
+		Data:  data.Data,
+		Count: data.Count,
 	}
 
 	return c.Status(200).JSON(response)
 }
 func GetDomains(c *fiber.Ctx) error {
 
-userId := c.Params("userId")
-	page := c.QueryInt("page", 1)
-	limit := c.QueryInt("limit", 10)
+	userId := c.Params("userId")
+	page := int32(c.QueryInt("page", 1))
+	limit := int32(c.QueryInt("limit", 10))
 
 	if err := c.QueryParser(&types.Query{}); err != nil {
 		return c.Status(400).JSON(fiber.Map{
@@ -68,24 +68,32 @@ userId := c.Params("userId")
 	// 	return c.Status(200).SendString(cache)
 	// }
 
-	var count int64
-	var domains []model.Domain
-	if err := database.DbConn.
-		Model(&model.Domain{}).
-		Count(&count).
-		Offset((page-1)*limit).
-		Limit(limit).
-		Find(&domains, "user_id=?", userId).Error; err != nil {
-		return c.Status(500).JSONP(fiber.Map{
-			"error": "Internal server error " + err.Error(),
-		})
+	data,err := dbconnection.Queries.GetDomains(dbconnection.Ctx,database.GetDomainsParams{
+		UserID: userId,
+		Offset: (page - 1) * limit,
+		Limit: limit,
+	})
+	
+	if err!=nil{
+		log.Fatalf("Error getting domains : %s", err.Error());
 	}
+	//TODO: optmimise more to get count in a single query
+	count,err := dbconnection.Queries.GetDomainsCount(dbconnection.Ctx,userId)
+	if err!=nil{
+		log.Fatalf("Error getting domains : %s", err.Error());
+	}
+	
+	// type Data struct{
+	// 	Name		string			`json:"name"`
+	// 	Id 			pgtype.UUID		`json:"id"`
+	// 	CreatedAt	pgtype.UUID		`json:"created_at"`
+	// }
 	type Response struct {
-		Data  []model.Domain `json:"data"`
-		Count int64          `json:"count"`
+		Data  []database.GetDomainsRow			 `json:"data"`
+		Count int64          					`json:"count"`
 	}
 	response := Response{
-		Data:  domains,
+		Data:  data,
 		Count: count,
 	}
 	// jsonDomain, err := json.Marshal(domains)
@@ -100,28 +108,43 @@ userId := c.Params("userId")
 
 func PostDomain(c *fiber.Ctx) error {
 
+	params := struct{ UserId    string	`params:"userId"`}{}
+	if err:= c.ParamsParser(&params); err!= nil{
+		log.Print(err)
+		return c.Status(400).JSON(fiber.Map{
+			"error":"Error parsing params " + err.Error(),
+		})
+	}
 	body := new(types.Domain)
-	userId := c.Params("userId")
 
 	if err := c.BodyParser(body); err != nil {
 		log.Printf("Error parsing req body %s", err.Error())
 		return c.Status(400).JSON("Error parsing body")
 	}
-
-	result := database.DbConn.Create(&model.Domain{
-		Name:   body.DomainName,
-		UserID: userId,
-	})
-	if result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrDuplicatedKey) {
-			log.Print(result.Error.Error())
-			return c.Status(409).JSON(fiber.Map{
-				"error": "Domain already exists, try another",
-			})
-		}
-		log.Printf("Error in saving Domain into db %s", result.Error.Error())
+	
+	if err := dbconnection.Queries.PostDomain(dbconnection.Ctx,database.PostDomainParams{
+		Name: body.DomainName,
+		UserID: params.UserId,
+	}); err!=nil{
+		log.Print(err.Error())
+		
 		return c.Status(500).JSON("Internal server error")
 	}
+
+	// result := database.DbConn.Create(&model.Domain{
+	// 	Name:   body.DomainName,
+	// 	UserID: userId,
+	// })
+	// if result.Error != nil {
+	// 	if errors.Is(result.Error, gorm.ErrDuplicatedKey) {
+	// 		log.Print(result.Error.Error())
+	// 		return c.Status(409).JSON(fiber.Map{
+	// 			"error": "Domain already exists, try another",
+	// 		})
+	// 	}
+	// 	log.Printf("Error in saving Domain into db %s", result.Error.Error())
+	// 	return c.Status(500).JSON("Internal server error")
+	// }
 
 	//revalidate cache
 	// valkeyCache.Revalidate("domains:" + userId)
@@ -131,8 +154,13 @@ func PostDomain(c *fiber.Ctx) error {
 }
 
 func UpdateDomain(c *fiber.Ctx) error {
-	domainId := c.Params("domainId")
-	userId := c.Params("userId")
+	var params types.DomainParams;
+
+	if err := c.ParamsParser(&params);err!=nil{
+		return c.Status(400).JSON(fiber.Map{
+			"error":"Error parsing params :" + err.Error(),
+		})
+	}
 
 	body := new(types.Domain)
 
@@ -140,14 +168,24 @@ func UpdateDomain(c *fiber.Ctx) error {
 		log.Printf("Error parsing req body %s", err.Error())
 		return c.Status(400).JSON("Error parsing body")
 	}
-	if result := database.DbConn.Model(&model.Domain{}).Where("id=? AND user_id=?", domainId, userId).Update("name", body.DomainName); result.Error != nil {
-		if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-			log.Printf("No domain found %s", result.Error.Error())
-			return c.Status(400).JSON("No domain found")
-		}
-		log.Printf("Error updating domain %s", result.Error.Error())
+
+	if err := dbconnection.Queries.UpdateDomain(dbconnection.Ctx,database.UpdateDomainParams{
+		ID: params.DomainID,
+		UserID: params.UserID,
+		Name: body.DomainName,
+	}); err!=nil{
+		log.Print(err.Error())
 		return c.Status(500).JSON("Error updating domain")
 	}
+
+	// if result := database.DbConn.Model(&model.Domain{}).Where("id=? AND user_id=?", domainId, userId).Update("name", body.DomainName); result.Error != nil {
+	// 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+	// 		log.Printf("No domain found %s", result.Error.Error())
+	// 		return c.Status(400).JSON("No domain found")
+	// 	}
+	// 	log.Printf("Error updating domain %s", result.Error.Error())
+	// 	return c.Status(500).JSON("Error updating domain")
+	// }
 	// if err := valkeyCache.Revalidate("domains:" + userId); err != nil {
 	// 	log.Printf("Error in revalidating domains cache: %s", err)
 	// }
@@ -155,24 +193,40 @@ func UpdateDomain(c *fiber.Ctx) error {
 }
 
 func DeleteDomain(c *fiber.Ctx) error {
-	domainId := c.Params("domainId")
-	userId := c.Params("userId")
+	
+	var params types.DomainParams;
 
-	if err := database.DbConn.Where("id =? AND user_id=?", domainId, userId).Delete(&model.Domain{}).Error; err != nil {
-		log.Printf("Error deleting domain %s", err.Error())
-
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			log.Printf("No domain found %s", err.Error())
-			return c.Status(400).JSON("Error:No record found")
-		}
-		if errors.Is(err, gorm.ErrForeignKeyViolated) {
-			return c.Status(405).JSON(fiber.Map{
-				"error": "Delete associated bills and distributors to delete domain",
-			})
-		}
-
-		return c.Status(500).JSON("Error deleting domain")
+	if err := c.ParamsParser(&params);err!=nil{
+		log.Print(err.Error())
+		return c.Status(400).JSON(fiber.Map{
+			"error":"Error parsing params " + err.Error(),
+		})
 	}
+
+	if err := dbconnection.Queries.DeleteDomain(dbconnection.Ctx,database.DeleteDomainParams{
+		ID: params.DomainID,
+		UserID: params.UserID,
+	}); err!=nil{
+		log.Print(err.Error())
+		return c.Status(400).JSON(fiber.Map{
+			"error":"Error deleting domain " + err.Error(),
+		})
+	}
+	// if err := database.DbConn.Where("id =? AND user_id=?", domainId, userId).Delete(&model.Domain{}).Error; err != nil {
+	// 	log.Printf("Error deleting domain %s", err.Error())
+
+	// 	if errors.Is(err, gorm.ErrRecordNotFound) {
+	// 		log.Printf("No domain found %s", err.Error())
+	// 		return c.Status(400).JSON("Error:No record found")
+	// 	}
+	// 	if errors.Is(err, gorm.ErrForeignKeyViolated) {
+	// 		return c.Status(405).JSON(fiber.Map{
+	// 			"error": "Delete associated bills and distributors to delete domain",
+	// 		})
+	// 	}
+
+	// 	return c.Status(500).JSON("Error deleting domain")
+	// }
 	// if err := valkeyCache.Revalidate("domains:" + userId); err != nil {
 	// 	log.Printf("Error in revalidating domains cache: %s", err)
 	// }

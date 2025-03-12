@@ -2,8 +2,8 @@ package main
 
 import (
 	"log"
-
-	"github.com/devMukulSingh/billManagementServer.git/db"
+	// "github.com/devMukulSingh/billManagementServer.git/db"
+	dbconnection "github.com/devMukulSingh/billManagementServer.git/dbConnection"
 	"github.com/devMukulSingh/billManagementServer.git/lib"
 	"github.com/devMukulSingh/billManagementServer.git/router"
 	"github.com/devMukulSingh/billManagementServer.git/valkeyCache"
@@ -11,6 +11,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/joho/godotenv"
+	// "gorm.io/gorm"
 )
 
 func main() {
@@ -29,16 +30,10 @@ func main() {
 		log.Printf("Error connecting to valkey : %s",err.Error())
 	}
 
-	database.ConnectDb()
-
-	db, err := database.DbConn.DB()
-
-	if err != nil {
-		log.Fatal("Error in DB")
+	if err := dbconnection.ConnectDb(); err!=nil{
+		log.Fatalf("Error in connection db : %s",err.Error())
 	}
-
-	defer db.Close()
-
+	
 	router.SetupRoutes(app)
 
 	log.Print("Server is running at 8000")

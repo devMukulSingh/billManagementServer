@@ -1,13 +1,14 @@
 package middleware
 
-import "github.com/gofiber/fiber/v2"
+import (
+	"github.com/devMukulSingh/billManagementServer.git/types"
+	"github.com/gofiber/fiber/v2"
+)
 
 func ValidateUser(c *fiber.Ctx) error {
-	param := struct {
-		UserId string `params:"userId"`
-	}{}
+	var params types.Param
 
-	if err := c.ParamsParser(&param); err != nil {
+	if err := c.ParamsParser(&params); err != nil {
 		return c.Status(403).JSON(fiber.Map{
 			"error": "Invalid userId",
 		})
