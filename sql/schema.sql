@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS products(
     user_id                     text                NOT NULL,
     created_at                  timestamp           NOT NULL DEFAULT NOW(),    
     updated_at                  timestamp           NOT NULL DEFAULT NOW(), 
-    FOREIGN KEY (user_id)   REFERENCES users(id) 
+    FOREIGN KEY (user_id)       REFERENCES users(id)
 );
 
 CREATE TABLE IF NOT EXISTS bill_items(

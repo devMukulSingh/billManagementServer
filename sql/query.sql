@@ -148,6 +148,7 @@
     json_agg(
         json_build_object(
             'id',bill_items.id,
+            'bill_id',bill_items.bill_id,
             'quantity',bill_items.quantity,
             'amount',bill_items.amount,
             'product',json_build_object(
@@ -160,8 +161,8 @@
     FROM bills
     JOIN domains ON domains.id = bills.domain_id
     JOIN distributors ON distributors.id = bills.distributor_id
-    JOIN bill_items ON bill_items.bill_id = bills.id     
-    JOIN products ON products.user_id = bills.user_id                                                                                                                                      
+    JOIN bill_items ON bill_items.bill_id = bills.id
+    JOIN products ON products.id = bill_items.product_id     
     WHERE bills.user_id = $1
     GROUP BY bills.id,
          bills.date,
@@ -181,7 +182,7 @@
  
 -- name: PostBill :one
     INSERT INTO bills(id,date,total_amount,is_paid,user_id,distributor_id,domain_id) 
-    VALUES($1,@date::timestamp ,$2,$3,$4,$5,$6)
+    VALUES(gen_random_uuid(),@date::timestamp ,$1,$2,$3,$4,$5)
     RETURNING id;
 
 -- name: UpdateBill :exec

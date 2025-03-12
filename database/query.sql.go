@@ -299,6 +299,7 @@ const getBills = `-- name: GetBills :many
     json_agg(
         json_build_object(
             'id',bill_items.id,
+            'bill_id',bill_items.bill_id,
             'quantity',bill_items.quantity,
             'amount',bill_items.amount,
             'product',json_build_object(
@@ -311,8 +312,8 @@ const getBills = `-- name: GetBills :many
     FROM bills
     JOIN domains ON domains.id = bills.domain_id
     JOIN distributors ON distributors.id = bills.distributor_id
-    JOIN bill_items ON bill_items.bill_id = bills.id     
-    JOIN products ON products.user_id = bills.user_id                                                                                                                                      
+    JOIN bill_items ON bill_items.bill_id = bills.id
+    JOIN products ON products.id = bill_items.product_id     
     WHERE bills.user_id = $1
     GROUP BY bills.id,
          bills.date,
@@ -552,12 +553,11 @@ func (q *Queries) GetProductsCount(ctx context.Context, userID string) (int64, e
 
 const postBill = `-- name: PostBill :one
     INSERT INTO bills(id,date,total_amount,is_paid,user_id,distributor_id,domain_id) 
-    VALUES($1,$7::timestamp ,$2,$3,$4,$5,$6)
+    VALUES(gen_random_uuid(),$6::timestamp ,$1,$2,$3,$4,$5)
     RETURNING id
 `
 
 type PostBillParams struct {
-	ID            string      `json:"id"`
 	TotalAmount   pgtype.Int4 `json:"total_amount"`
 	IsPaid        pgtype.Bool `json:"is_paid"`
 	UserID        string      `json:"user_id"`
@@ -568,7 +568,6 @@ type PostBillParams struct {
 
 func (q *Queries) PostBill(ctx context.Context, arg PostBillParams) (string, error) {
 	row := q.db.QueryRow(ctx, postBill,
-		arg.ID,
 		arg.TotalAmount,
 		arg.IsPaid,
 		arg.UserID,
