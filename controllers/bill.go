@@ -1,6 +1,6 @@
 package controller
 
-import (
+import (	
 	// "encoding/json"
 	// "github.com/devMukulSingh/billManagementServer.git/db"
 	// "time"
@@ -35,13 +35,28 @@ func GetBills(c *fiber.Ctx) error {
 
 	data, err := dbconnection.Queries.GetBills(dbconnection.Ctx, database.GetBillsParams{
 		UserID: userId,
-		Offset: queryParams.Page,
+		Offset: (queryParams.Page -1 ) * queryParams.Limit,
 		Limit:  queryParams.Limit,
 	})
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{
 			"error": "Error in getting Bills " + err.Error(),
 		})
+	}
+	count,err := dbconnection.Queries.GetBillsCount(dbconnection.Ctx,userId);
+	if err != nil{
+		log.Print(err.Error())
+		return c.Status(500).JSON(fiber.Map{
+			"error":"Error in getting counts :" + err.Error(),
+		})
+	}
+	type Response struct{
+		Data		 []database.GetBillsRow		`json:"data"`
+		Count			int64					`json:"count"`
+	}
+	response := Response{
+		Data:data,
+		Count: count,
 	}
 	// cache, err := valkeyCache.GetValue("bills:" + userId)
 	// if err != nil {
@@ -55,7 +70,7 @@ func GetBills(c *fiber.Ctx) error {
 	// if err := valkeyCache.SetValue("bills:"+userId, jsonBills); err != nil {
 	// 	log.Printf("Error in setting value in valkey %s ", err.Error())
 	// }
-	return c.Status(200).JSON(data)
+	return c.Status(200).JSON(response)
 
 }
 

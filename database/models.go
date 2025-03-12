@@ -5,61 +5,63 @@
 package database
 
 import (
+	"time"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Bill struct {
-	ID            string           `json:"id"`
-	Date          pgtype.Timestamp `json:"date"`
-	IsPaid        pgtype.Bool      `json:"is_paid"`
-	TotalAmount   pgtype.Int4      `json:"total_amount"`
-	UserID        string           `json:"user_id"`
-	DistributorID string           `json:"distributor_id"`
-	DomainID      string           `json:"domain_id"`
-	CreatedAt     pgtype.Timestamp `json:"created_at"`
-	UpdatedAt     pgtype.Timestamp `json:"updated_at"`
+	ID            string      `json:"id"`
+	Date          time.Time   `json:"date"`
+	IsPaid        pgtype.Bool `json:"is_paid"`
+	TotalAmount   pgtype.Int4 `json:"total_amount"`
+	UserID        string      `json:"user_id"`
+	DistributorID string      `json:"distributor_id"`
+	DomainID      string      `json:"domain_id"`
+	CreatedAt     time.Time   `json:"created_at"`
+	UpdatedAt     time.Time   `json:"updated_at"`
 }
 
 type BillItem struct {
-	ID        string           `json:"id"`
-	Quantity  int32            `json:"quantity"`
-	Amount    int32            `json:"amount"`
-	ProductID string           `json:"product_id"`
-	BillID    string           `json:"bill_id"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+	ID        string    `json:"id"`
+	Quantity  int32     `json:"quantity"`
+	Amount    int32     `json:"amount"`
+	ProductID string    `json:"product_id"`
+	BillID    string    `json:"bill_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type Distributor struct {
-	ID        string           `json:"id"`
-	Name      string           `json:"name"`
-	DomainID  string           `json:"domain_id"`
-	UserID    string           `json:"user_id"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	DomainID  string    `json:"domain_id"`
+	UserID    string    `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type Domain struct {
-	ID        string           `json:"id"`
-	Name      string           `json:"name"`
-	UserID    string           `json:"user_id"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	UserID    string    `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type Product struct {
-	ID        string           `json:"id"`
-	Name      string           `json:"name"`
-	Rate      int32            `json:"rate"`
-	UserID    string           `json:"user_id"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Rate      int32     `json:"rate"`
+	UserID    string    `json:"user_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type User struct {
-	ID        string           `json:"id"`
-	Name      string           `json:"name"`
-	Email     string           `json:"email"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	UpdatedAt pgtype.Timestamp `json:"updated_at"`
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	Email     string    `json:"email"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }

@@ -1,6 +1,8 @@
 package types
 
 import (
+	"time"
+
 	"github.com/devMukulSingh/billManagementServer.git/database"
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -31,35 +33,35 @@ type Query struct {
 type Param struct {
 	UserId   string `params:"userId"`
 }
+type Response struct {
+		Data  []database.GetDomainsRow			 `json:"data"`
+		Count int64          					`json:"count"`
+}
 
 type Product struct {
-	ProductName   string 		`json:"product_name"`
+	Name   string 		`json:"name"` 	 //do not change, matched with client side schema
 	Rate   int32    			`json:"rate"`
 }
 
 type Bill struct {
-	DistributorId  string        `json:"distributor_id"`
+	DistributorId  string        `json:"distributor_id"` //do not change, matched with client side schema
 	DomainId       string        `json:"domain_id"`
-	Date          	pgtype.Timestamp       `json:"date"`
+	Date          	time.Time      `json:"date"`
 	IsPaid        	pgtype.Bool            `json:"isPaid"`
 	BillItems     	[]BillItem 		`json:"bill_items"`
 	TotalAmount   	pgtype.Int4              `json:"totalAmount"`
 }
 type BillItem struct{
-	ID					 string		`json:"id"`
+	ID					 string		`json:"id"`		//do not change, matched with client side schema
 	Amount				int32			`json:"amount"`
-	Quantity			int32			`json:"quantity"`
+	Quantity			int32	`json:"quantity"`
 	ProductID			 string		`json:"product_id"`
 }
 type Distributor struct {
-	DistributorName string `json:"distributor_name"`
+	DistributorName string `json:"distributor_name"` //do not change, matched with client side schema
 	DomainID        string `json:"domain_id"`
 }
 
 type Domain struct {
-	DomainName string `json:"domain_name"`
+	DomainName string `json:"domain_name"`		//do not change, matched with client side schema
 }
-	type Response struct {
-		Data  []database.GetDomainsRow			 `json:"data"`
-		Count int64          					`json:"count"`
-	}

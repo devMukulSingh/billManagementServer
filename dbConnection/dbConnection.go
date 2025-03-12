@@ -5,22 +5,25 @@ import (
 	"os"
 
 	"github.com/devMukulSingh/billManagementServer.git/database"
-	"github.com/jackc/pgx/v5"
+	// "github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var Queries* database.Queries = nil
 var Ctx context.Context
+var Connection  *pgxpool.Pool
 
 func ConnectDb() error {
 	dbUrl := os.Getenv("DB_URL")
 	ctx := context.Background()
 	Ctx = ctx;
-	conn, err := pgx.Connect(Ctx, dbUrl)
+	pool,err := pgxpool.New(Ctx,dbUrl)
 	if err != nil {
 		return err
 	}
-	// defer conn.Close(Ctx)
-	queries := database.New(conn)
+	  Connection = pool
+	
+	queries := database.New(pool)
 	Queries = queries;
 	return nil
 }

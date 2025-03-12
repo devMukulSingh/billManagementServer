@@ -33,9 +33,9 @@ func main() {
 	if err := dbconnection.ConnectDb(); err!=nil{
 		log.Fatalf("Error in connection db : %s",err.Error())
 	}
+	defer dbconnection.Connection.Close()
 	
 	router.SetupRoutes(app)
-
 	log.Print("Server is running at 8000")
 	app.Listen(":8000")
 }

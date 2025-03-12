@@ -8,6 +8,7 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 )
@@ -146,13 +147,13 @@ const getAllBills = `-- name: GetAllBills :many
 `
 
 type GetAllBillsRow struct {
-	ID          string           `json:"id"`
-	Date        pgtype.Timestamp `json:"date"`
-	IsPaid      pgtype.Bool      `json:"is_paid"`
-	CreatedAt   pgtype.Timestamp `json:"created_at"`
-	Domain      json.RawMessage  `json:"domain"`
-	Distributor json.RawMessage  `json:"distributor"`
-	BillItems   json.RawMessage  `json:"bill_items"`
+	ID          string          `json:"id"`
+	Date        time.Time       `json:"date"`
+	IsPaid      pgtype.Bool     `json:"is_paid"`
+	CreatedAt   time.Time       `json:"created_at"`
+	Domain      json.RawMessage `json:"domain"`
+	Distributor json.RawMessage `json:"distributor"`
+	BillItems   json.RawMessage `json:"bill_items"`
 }
 
 // ----------------BILLS------------------------------
@@ -198,10 +199,10 @@ const getAllDistributors = `-- name: GetAllDistributors :many
 `
 
 type GetAllDistributorsRow struct {
-	ID        string           `json:"id"`
-	Name      string           `json:"name"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	Domain    json.RawMessage  `json:"domain"`
+	ID        string          `json:"id"`
+	Name      string          `json:"name"`
+	CreatedAt time.Time       `json:"created_at"`
+	Domain    json.RawMessage `json:"domain"`
 }
 
 // -------------DISTRIBUTOR----------------
@@ -333,13 +334,13 @@ type GetBillsParams struct {
 }
 
 type GetBillsRow struct {
-	ID          string           `json:"id"`
-	Date        pgtype.Timestamp `json:"date"`
-	IsPaid      pgtype.Bool      `json:"is_paid"`
-	CreatedAt   pgtype.Timestamp `json:"created_at"`
-	Domain      json.RawMessage  `json:"domain"`
-	Distributor json.RawMessage  `json:"distributor"`
-	BillItems   json.RawMessage  `json:"bill_items"`
+	ID          string          `json:"id"`
+	Date        time.Time       `json:"date"`
+	IsPaid      pgtype.Bool     `json:"is_paid"`
+	CreatedAt   time.Time       `json:"created_at"`
+	Domain      json.RawMessage `json:"domain"`
+	Distributor json.RawMessage `json:"distributor"`
+	BillItems   json.RawMessage `json:"bill_items"`
 }
 
 func (q *Queries) GetBills(ctx context.Context, arg GetBillsParams) ([]GetBillsRow, error) {
@@ -402,10 +403,10 @@ type GetDistributorsParams struct {
 }
 
 type GetDistributorsRow struct {
-	ID        string           `json:"id"`
-	Name      string           `json:"name"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
-	Domain    json.RawMessage  `json:"domain"`
+	ID        string          `json:"id"`
+	Name      string          `json:"name"`
+	CreatedAt time.Time       `json:"created_at"`
+	Domain    json.RawMessage `json:"domain"`
 }
 
 func (q *Queries) GetDistributors(ctx context.Context, arg GetDistributorsParams) ([]GetDistributorsRow, error) {
@@ -460,9 +461,9 @@ type GetDomainsParams struct {
 }
 
 type GetDomainsRow struct {
-	ID        string           `json:"id"`
-	Name      string           `json:"name"`
-	CreatedAt pgtype.Timestamp `json:"created_at"`
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 func (q *Queries) GetDomains(ctx context.Context, arg GetDomainsParams) ([]GetDomainsRow, error) {
@@ -551,29 +552,29 @@ func (q *Queries) GetProductsCount(ctx context.Context, userID string) (int64, e
 
 const postBill = `-- name: PostBill :one
     INSERT INTO bills(id,date,total_amount,is_paid,user_id,distributor_id,domain_id) 
-    VALUES($1,$2,$3,$4,$5,$6,$7)
+    VALUES($1,$7::timestamp ,$2,$3,$4,$5,$6)
     RETURNING id
 `
 
 type PostBillParams struct {
-	ID            string           `json:"id"`
-	Date          pgtype.Timestamp `json:"date"`
-	TotalAmount   pgtype.Int4      `json:"total_amount"`
-	IsPaid        pgtype.Bool      `json:"is_paid"`
-	UserID        string           `json:"user_id"`
-	DistributorID string           `json:"distributor_id"`
-	DomainID      string           `json:"domain_id"`
+	ID            string      `json:"id"`
+	TotalAmount   pgtype.Int4 `json:"total_amount"`
+	IsPaid        pgtype.Bool `json:"is_paid"`
+	UserID        string      `json:"user_id"`
+	DistributorID string      `json:"distributor_id"`
+	DomainID      string      `json:"domain_id"`
+	Date          time.Time   `json:"date"`
 }
 
 func (q *Queries) PostBill(ctx context.Context, arg PostBillParams) (string, error) {
 	row := q.db.QueryRow(ctx, postBill,
 		arg.ID,
-		arg.Date,
 		arg.TotalAmount,
 		arg.IsPaid,
 		arg.UserID,
 		arg.DistributorID,
 		arg.DomainID,
+		arg.Date,
 	)
 	var id string
 	err := row.Scan(&id)
@@ -633,12 +634,12 @@ const updateBill = `-- name: UpdateBill :exec
 `
 
 type UpdateBillParams struct {
-	Date          pgtype.Timestamp `json:"date"`
-	TotalAmount   pgtype.Int4      `json:"total_amount"`
-	IsPaid        pgtype.Bool      `json:"is_paid"`
-	UserID        string           `json:"user_id"`
-	DistributorID string           `json:"distributor_id"`
-	DomainID      string           `json:"domain_id"`
+	Date          time.Time   `json:"date"`
+	TotalAmount   pgtype.Int4 `json:"total_amount"`
+	IsPaid        pgtype.Bool `json:"is_paid"`
+	UserID        string      `json:"user_id"`
+	DistributorID string      `json:"distributor_id"`
+	DomainID      string      `json:"domain_id"`
 }
 
 func (q *Queries) UpdateBill(ctx context.Context, arg UpdateBillParams) error {

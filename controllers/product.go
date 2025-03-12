@@ -40,13 +40,13 @@ func GetAllProducts(c *fiber.Ctx) error {
 			"error": "Error in getting Products " + err.Error(),
 		})
 	}
-	count, err := dbconnection.Queries.GetProductsCount(dbconnection.Ctx, userId)
-	if err != nil {
-		log.Print(err.Error())
-		return c.Status(400).JSON(fiber.Map{
-			"error": "Error in getting Products " + err.Error(),
-		})
-	}
+	// count, err := dbconnection.Queries.GetProductsCount(dbconnection.Ctx, userId)
+	// if err != nil {
+	// 	log.Print(err.Error())
+	// 	return c.Status(400).JSON(fiber.Map{
+	// 		"error": "Error in getting Products " + err.Error(),
+	// 	})
+	// }
 	// if err := database.DbConn.
 	// Model(&model.Product{}).
 	// Count(&count).
@@ -66,15 +66,15 @@ func GetAllProducts(c *fiber.Ctx) error {
 	// if err := valkeyCache.SetValue("billItems:"+userId,jsonItems);err!=nil{
 	// 	log.Printf("error setting billItems in valkey : %s",err);
 	// }
-	type Response struct{
-		Data		[]database.Product			`json:"data"`
-		Count		int64						`json:"count"`
-	}
-	response := Response{
-		Data: data,
-		Count: count,
-	}
-	return c.Status(200).JSON(response)
+	// type Response struct{
+	// 	Data		[]database.Product			`json:"data"`
+	// 	Count		int64						`json:"count"`
+	// }
+	// response := Response{
+	// 	Data: data,
+	// 	Count: count,
+	// }
+	return c.Status(200).JSON(data)
 }
 func GetProducts(c *fiber.Ctx) error {
 
@@ -144,7 +144,7 @@ func PostProduct(c *fiber.Ctx) error {
 	}
 
 	if err := dbconnection.Queries.PostProduct(dbconnection.Ctx, database.PostProductParams{
-		Name:   body.ProductName,
+		Name:   body.Name,
 		Rate:   int32(body.Rate),
 		UserID: userId,
 	}); err != nil {
@@ -192,7 +192,7 @@ func UpdateProduct(c *fiber.Ctx) error {
 	if err := dbconnection.Queries.UpdateProduct(dbconnection.Ctx, database.UpdateProductParams{
 		ID:     params.ProductId,
 		UserID: params.UserId,
-		Name:   body.ProductName,
+		Name:   body.Name,
 		Rate:   body.Rate,
 	}); err != nil {
 		log.Print(err)

@@ -12,5 +12,5 @@ sql:
         overrides:
           - db_type: json
             go_type: "encoding/json.RawMessage"
-          - db_type: text
-            go_type: string
+          - db_type: pg_catalog.timestamp
+            go_type: "time.Time"

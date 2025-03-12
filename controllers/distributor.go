@@ -81,23 +81,23 @@ func GetAllDistributors(c *fiber.Ctx) error {
 		})
 	}
 
-	count, err := dbconnection.Queries.GetDistributorsCount(dbconnection.Ctx, userId)
-	if err != nil {
-		log.Print(err.Error())
-		return c.Status(500).JSON(fiber.Map{
-			"error": "Error in getting Distributors count " + err.Error(),
-		})
-	}
-	type Response struct {
-		Data  []database.GetAllDistributorsRow `json:"data"`
-		Count int64          	`json:"count"`
-	}
-	response := Response{
-		Data:  data,
-		Count: count,
-	}
+	// count, err := dbconnection.Queries.GetDistributorsCount(dbconnection.Ctx, userId)
+	// if err != nil {
+	// 	log.Print(err.Error())
+	// 	return c.Status(500).JSON(fiber.Map{
+	// 		"error": "Error in getting Distributors count " + err.Error(),
+	// 	})
+	// }
+	// type Response struct {
+	// 	Data  []database.GetAllDistributorsRow `json:"data"`
+	// 	Count int64          	`json:"count"`
+	// }
+	// response := Response{
+	// 	Data:  data,
+	// 	Count: count,
+	// }
 
-	return c.Status(200).JSON(response)
+	return c.Status(200).JSON(data)
 
 }
 
@@ -155,12 +155,12 @@ func UpdateDistributor(c *fiber.Ctx) error {
 		})
 	}
 
-	type exisitingDistributor struct {
-		Name     string `json:"distributor_name"`
-		DomainId string `json:"domain_id"`
-	}
+	// type exisitingDistributor struct {
+	// 	Name     string `json:"distributor_name"`
+	// 	DomainId string `json:"domain_id"`
+	// }
 
-	body := new(exisitingDistributor)
+	body := new(types.Distributor)
 
 	if err := c.BodyParser(body); err != nil {
 		log.Printf("Error parsing req body %s", err.Error())
@@ -170,8 +170,8 @@ func UpdateDistributor(c *fiber.Ctx) error {
 	if err := dbconnection.Queries.UpdateDistributor(dbconnection.Ctx, database.UpdateDistributorParams{
 		ID:       params.DistributorId,
 		UserID:   params.UserId,
-		Name:     body.Name,
-		DomainID: body.DomainId,
+		Name:     body.DistributorName,
+		DomainID: body.DomainID,
 	}); err != nil {
 		log.Print(err.Error())
 		return c.Status(500).JSON(fiber.Map{
