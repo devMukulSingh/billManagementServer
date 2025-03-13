@@ -243,35 +243,3 @@ func DeleteBill(c *fiber.Ctx) error {
 	return c.Status(200).JSON("Bill deleted successfully")
 }
 
-// func GetBill(c *fiber.Ctx) error {
-
-// 	userId := c.Params("billId")
-// 	var params types.BillParams;
-// 	if err:= c.ParamsParser(&params);err!= nil{
-// 		log.Print(err)
-// 		return c.Status(400).JSON(fiber.Map{
-// 			"error":"Error in parsing params " + err.Error(),
-// 		})
-// 	}
-
-// 	if err:= c.QueryParser(&types.Query{});err!=nil{
-// 		return c.Status(400).JSON(fiber.Map{
-// 				"error":"Error in parsing query params "+ err.Error(),
-// 			})
-// 	}
-
-// 	data,err := dbconnection.Queries.GetBills(dbconnection.Ctx,userId);
-// 	if err != nil{
-// 		return c.Status(400).JSON(fiber.Map{
-// 			"error":"Error in getting Bills " + err.Error(),
-// 		})
-// 	}
-// 	// var bill model.Bill
-
-// 	// if err := database.DbConn.Limit(1).Where("id =? AND user_id=?", billId, userId).Find(&bill).Error; err != nil {
-// 	// 	return c.Status(500).JSON(fiber.Map{
-// 	// 		"error": "Internal server error " + err.Error(),
-// 	// 	})
-// 	// }
-// 	return c.Status(200).JSON(bill)
-// }

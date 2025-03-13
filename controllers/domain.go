@@ -1,18 +1,14 @@
 package controller
 
 import (
-	// "encoding/json"
-	// "errors"
-	// "database/sql"
+	"database/sql"
+	"errors"
 	"log"
 
 	"github.com/devMukulSingh/billManagementServer.git/database"
 	"github.com/devMukulSingh/billManagementServer.git/dbConnection"
 	"github.com/devMukulSingh/billManagementServer.git/types"
-// 
-	// "github.com/devMukulSingh/billManagementServer.git/db"
-	// "github.com/devMukulSingh/billManagementServer.git/model"
-	// "github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	// "github.com/devMukulSingh/billManagementServer.git/valkeyCache"
 	"github.com/gofiber/fiber/v2"
@@ -126,9 +122,18 @@ func PostDomain(c *fiber.Ctx) error {
 		Name: body.DomainName,
 		UserID: params.UserId,
 	}); err!=nil{
+		var pgErr *pgconn.PgError
 		log.Print(err.Error())
-		
-		return c.Status(500).JSON("Internal server error")
+		if ok := errors.As(err,&pgErr) ; ok{
+			if pgErr.Code=="23505"{
+				return c.Status(400).JSON(fiber.Map{
+					"error":"Domain already exists, try another.",
+				})
+			}
+		}
+		return c.Status(500).JSON(fiber.Map{
+			"error":"Error posting domain : " + err.Error(),
+		})
 	}
 
 	// result := database.DbConn.Create(&model.Domain{
@@ -174,8 +179,18 @@ func UpdateDomain(c *fiber.Ctx) error {
 		UserID: params.UserID,
 		Name: body.DomainName,
 	}); err!=nil{
+		var pgErr *pgconn.PgError
 		log.Print(err.Error())
-		return c.Status(500).JSON("Error updating domain")
+		if ok := errors.As(err,&pgErr) ; ok{
+			if pgErr.Code=="23505"{
+				return c.Status(400).JSON(fiber.Map{
+					"error":"Domain already exists, try another.",
+				})
+			}
+		}
+		return c.Status(500).JSON(fiber.Map{
+			"error":"Error updating domain : " + err.Error(),
+		})
 	}
 
 	// if result := database.DbConn.Model(&model.Domain{}).Where("id=? AND user_id=?", domainId, userId).Update("name", body.DomainName); result.Error != nil {
@@ -208,8 +223,13 @@ func DeleteDomain(c *fiber.Ctx) error {
 		UserID: params.UserID,
 	}); err!=nil{
 		log.Print(err.Error())
+		if errors.Is(err,sql.ErrNoRows){
+			return c.Status(404).JSON(fiber.Map{
+				"error":"no domain found ",
+			})
+		}
 		return c.Status(400).JSON(fiber.Map{
-			"error":"Error deleting domain " + err.Error(),
+			"error":"Error deleting domain : " + err.Error(),
 		})
 	}
 	// if err := database.DbConn.Where("id =? AND user_id=?", domainId, userId).Delete(&model.Domain{}).Error; err != nil {
