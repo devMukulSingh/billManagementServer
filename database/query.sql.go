@@ -628,27 +628,32 @@ func (q *Queries) PostProduct(ctx context.Context, arg PostProductParams) error 
 }
 
 const updateBill = `-- name: UpdateBill :exec
-    UPDATE bills SET date=$1, total_amount=$2, is_paid=$3, user_id=$4, distributor_id=$5, domain_id=$6
+    UPDATE bills 
+    SET total_amount=$3, is_paid=$4, user_id=$5, distributor_id=$6, domain_id=$7,date=$8
     WHERE id = $1 AND user_id=$2
 `
 
 type UpdateBillParams struct {
-	Date          time.Time   `json:"date"`
+	ID            string      `json:"id"`
+	UserID        string      `json:"user_id"`
 	TotalAmount   pgtype.Int4 `json:"total_amount"`
 	IsPaid        pgtype.Bool `json:"is_paid"`
-	UserID        string      `json:"user_id"`
+	UserID_2      string      `json:"user_id_2"`
 	DistributorID string      `json:"distributor_id"`
 	DomainID      string      `json:"domain_id"`
+	Date          time.Time   `json:"date"`
 }
 
 func (q *Queries) UpdateBill(ctx context.Context, arg UpdateBillParams) error {
 	_, err := q.db.Exec(ctx, updateBill,
-		arg.Date,
+		arg.ID,
+		arg.UserID,
 		arg.TotalAmount,
 		arg.IsPaid,
-		arg.UserID,
+		arg.UserID_2,
 		arg.DistributorID,
 		arg.DomainID,
+		arg.Date,
 	)
 	return err
 }

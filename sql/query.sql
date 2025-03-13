@@ -186,7 +186,8 @@
     RETURNING id;
 
 -- name: UpdateBill :exec
-    UPDATE bills SET date=$1, total_amount=$2, is_paid=$3, user_id=$4, distributor_id=$5, domain_id=$6
+    UPDATE bills 
+    SET total_amount=$3, is_paid=$4, user_id=$5, distributor_id=$6, domain_id=$7,date=$8
     WHERE id = $1 AND user_id=$2;
 
 -- name: DeleteBill :exec
