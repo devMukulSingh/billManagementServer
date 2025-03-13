@@ -209,3 +209,6 @@ VALUES (
     DELETE FROM bill_items 
     WHERE bill_id = $1;
 
+-- name: PostUser :exec
+    INSERT INTO users(id,email,name)
+    VALUES($1,$2,$3);

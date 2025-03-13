@@ -627,6 +627,22 @@ func (q *Queries) PostProduct(ctx context.Context, arg PostProductParams) error 
 	return err
 }
 
+const postUser = `-- name: PostUser :exec
+    INSERT INTO users(id,email,name)
+    VALUES($1,$2,$3)
+`
+
+type PostUserParams struct {
+	ID    string `json:"id"`
+	Email string `json:"email"`
+	Name  string `json:"name"`
+}
+
+func (q *Queries) PostUser(ctx context.Context, arg PostUserParams) error {
+	_, err := q.db.Exec(ctx, postUser, arg.ID, arg.Email, arg.Name)
+	return err
+}
+
 const updateBill = `-- name: UpdateBill :exec
     UPDATE bills 
     SET total_amount=$3, is_paid=$4, user_id=$5, distributor_id=$6, domain_id=$7,date=$8

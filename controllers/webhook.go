@@ -7,6 +7,8 @@ import (
 
 	// database "github.com/devMukulSingh/billManagementServer.git/db"
 	// "github.com/devMukulSingh/billManagementServer.git/model"
+	"github.com/devMukulSingh/billManagementServer.git/database"
+	dbconnection "github.com/devMukulSingh/billManagementServer.git/dbConnection"
 	"github.com/gofiber/fiber/v2"
 	svix "github.com/svix/svix-webhooks/go"
 )
@@ -50,16 +52,16 @@ func Webhook(c *fiber.Ctx) error {
 			return c.Status(fiber.StatusUnauthorized).JSON("Invalid signature")
 		}
 
-		// if result := database.DbConn.Create(&model.User{
-		// 	Name:  event.Data.First_name + " " + event.Data.Last_name,
-		// 	Email: event.Data.Email_Addresses[0].Email_Address,
-		// 	ID: event.Data.Id,
-		// }); result.Error != nil {
-		// 	log.Printf("failed to create user into db %s", result.Error.Error())
-		// 	return c.Status(500).JSON(fiber.Map{
-		// 		"error": "failed to create user into db " + result.Error.Error(),
-		// 	})
-		// }
+		if err:= dbconnection.Queries.PostUser(dbconnection.Ctx,database.PostUserParams{
+			Name:  event.Data.First_name + " " + event.Data.Last_name,
+			Email: event.Data.Email_Addresses[0].Email_Address,
+			ID: event.Data.Id,
+		}); err!=nil{
+			log.Print(err.Error())
+			return c.Status(500).JSON(fiber.Map{
+				"error":"Failed to save user to db :" + err.Error(),
+			})
+		}
 		return c.Status(201).JSON("User creatd successfully")
 	}
 	return c.Status(200).JSON("Other event than user.created")
