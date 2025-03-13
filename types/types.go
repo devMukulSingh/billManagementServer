@@ -10,58 +10,62 @@ import (
 //Request body types
 
 type DomainParams struct{
-	DomainID		string 	`params:"domainId"`
-	UserID			 string			`params:"userId"`
+	DomainID		string 	`params:"domainId" validate:"required,min=1"`
+	UserID			 string			`params:"userId" validate:"required,min=1"`
 }
 type DistributorParams struct{
-	DistributorId 		string 	`params:"distributorId"`
-	UserId			 string			`params:"userId"`
+	DistributorId 		string 	`params:"distributorId" validate:"required, min=1"`
+	UserId			 string			`params:"userId" validate:"required,min=1"`
 }
 type ProductParams struct{
-	ProductId 		string 			`params:"productId"`
-	UserId			 	string				`params:"userId"`
+	ProductId 		string 			`params:"productId" validate:"required, min=1"`
+	UserId			 	string				`params:"userId" validate:"required,min=1"`
 }
 type BillParams struct{
-	BillId 			string 			`params:"billId"`
-	UserId			 	string				`params:"userId"`
+	BillId 			string 			`params:"billId" validate:"required, min=1"`
+	UserId			 	string				`params:"userId" validate:"required,min=1"`
 }
 type Query struct {
-	Page   int32 `query:"page"`
-	Limit  int32 `query:"limit"`
+	Page   int32 `query:"page" validate:"required,numeric"`
+	Limit  int32 `query:"limit" validate:"required,numeric"`
 }
 
 type Param struct {
-	UserId   string `params:"userId"`
+	UserId   string `params:"userId" validate:"required,min=1"`
 }
 type Response struct {
 		Data  []database.GetDomainsRow			 `json:"data"`
 		Count int64          					`json:"count"`
 }
-
+type IError struct {
+    Field string
+    Tag   string
+    Value string
+}
 type Product struct {
-	Name   string 		`json:"name"` 	 //do not change, matched with client side schema
-	Rate   int32    			`json:"rate"`
+	Name   string 				`json:"name" validate:"required,min=1"` //do not change, matched with client side schema
+	Rate   int32    			`json:"rate" validate:"required,numeric"`
 }
 
-type Bill struct {
-	DistributorId  string        `json:"distributor_id"` //do not change, matched with client side schema
-	DomainId       string        `json:"domain_id"`
-	Date          	time.Time      `json:"date"`
-	IsPaid        	pgtype.Bool            `json:"is_paid"`
-	BillItems     	[]BillItem 		`json:"bill_items"`
-	TotalAmount   	pgtype.Int4              `json:"totalAmount"`
+type Bill struct {				
+	DistributorId  string        			`json:"distributor_id" validate:"required,min=1"` //do not change, matched with client side schema
+	DomainId       string        			`json:"domain_id" validate:"required,min=1"`
+	Date          	time.Time      			`json:"date" validate:"required"`
+	IsPaid        	pgtype.Bool            	`json:"is_paid" validate:"required"`
+	BillItems     	[]BillItem 				`json:"bill_items" validate:"required,min=1"`
+	TotalAmount   	pgtype.Int4              `json:"totalAmount" validate:"required,numeric"`
 }
 type BillItem struct{
-	ID					 string		`json:"id"`		//do not change, matched with client side schema
-	Amount				int32			`json:"amount"`
-	Quantity			int32	`json:"quantity"`
-	ProductID			 string		`json:"product_id"`
+	ID					 string			`json:"id" validate:"required,min=1"`//do not change, matched with client side schema
+	Amount				int32			`json:"amount" validate:"required,numeric"`
+	Quantity			int32			`json:"quantity" validate:"required,min=1"`
+	ProductID			 string			`json:"product_id" validate:"required,min=1"`
 }
 type Distributor struct {
-	DistributorName string `json:"distributor_name"` //do not change, matched with client side schema
-	DomainID        string `json:"domain_id"`
+	DistributorName string `json:"distributor_name" validate:"required,min=1"` //do not change, matched with client side schema
+	DomainID        string `json:"domain_id" validate:"required,min=1"`
 }
 
 type Domain struct {
-	DomainName string `json:"domain_name"`		//do not change, matched with client side schema
+	DomainName string `json:"domain_name" validate:"required,min=1"`		//do not change, matched with client side schema
 }
