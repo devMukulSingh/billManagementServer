@@ -2,6 +2,7 @@ package controller
 
 import (
 	// "encoding/json"
+	"errors"
 	"log"
 	// "strconv"
 	// "errors"
@@ -11,6 +12,8 @@ import (
 	"github.com/devMukulSingh/billManagementServer.git/database"
 	dbconnection "github.com/devMukulSingh/billManagementServer.git/dbConnection"
 	"github.com/devMukulSingh/billManagementServer.git/types"
+	"github.com/jackc/pgx/v5/pgconn"
+
 	// "github.com/devMukulSingh/billManagementServer.git/valkeyCache"
 	"github.com/gofiber/fiber/v2"
 	// "gorm.io/gorm"
@@ -124,12 +127,12 @@ func GetProducts(c *fiber.Ctx) error {
 	// if err := valkeyCache.SetValue("billItems:"+userId,jsonItems);err!=nil{
 	// 	log.Printf("error setting billItems in valkey : %s",err);
 	// }
-	type Response struct{
-		Data		[]database.Product			`json:"data"`
-		Count		int64			`json:"count"`
+	type Response struct {
+		Data  []database.Product `json:"data"`
+		Count int64              `json:"count"`
 	}
 	response := Response{
-		Data: data,
+		Data:  data,
 		Count: count,
 	}
 	return c.Status(200).JSON(response)
@@ -148,21 +151,19 @@ func PostProduct(c *fiber.Ctx) error {
 		Rate:   int32(body.Rate),
 		UserID: userId,
 	}); err != nil {
-		log.Print(err)
+		log.Print(err.Error())
+		var pgErr *pgconn.PgError
+		if ok := errors.As(err, &pgErr); ok {
+			if pgErr.Code == "23505" {
+				return c.Status(409).JSON(fiber.Map{
+					"error": "Product already exists, try another",
+				})
+			}
+		}
 		return c.Status(500).JSON(fiber.Map{
 			"error": "Error in post Product " + err.Error(),
 		})
 	}
-
-	// result := database.DbConn.Create(&model.Product{
-	// 	Name:   body.Name,
-	// 	Rate:   body.Rate,
-	// 	UserID: userId,
-	// })
-	// if result.Error != nil {
-	// 	log.Printf("Error in saving Products into db %s", result.Error.Error())
-	// 	return c.Status(500).JSON("Internal server error")
-	// }
 
 	// if err := valkeyCache.Revalidate("billItems:"+userId);err!=nil{
 	// 	log.Printf("Error in revalidating 'Products' from valkey: %s",err)
@@ -195,12 +196,20 @@ func UpdateProduct(c *fiber.Ctx) error {
 		Name:   body.Name,
 		Rate:   body.Rate,
 	}); err != nil {
-		log.Print(err)
+		log.Print(err.Error())
+		var pgErr *pgconn.PgError
+		if ok := errors.As(err, &pgErr); ok {
+			if pgErr.Code == "23505" {
+				return c.Status(409).JSON(fiber.Map{
+					"error": "Product already exists, try another",
+				})
+			}
+		}
 		return c.Status(500).JSON(fiber.Map{
 			"error": "Error in updating product " + err.Error(),
 		})
 	}
-	
+
 	// if err := valkeyCache.Revalidate("billItems:"+userId);err!=nil{
 	// 	log.Printf("Error in revalidating 'billItems' from valkey: %s",err)
 	// }
@@ -226,7 +235,6 @@ func DeleteProduct(c *fiber.Ctx) error {
 			"error": "Error in deleting product " + err.Error(),
 		})
 	}
-
 
 	// if err := valkeyCache.Revalidate("billItems:"+userId);err!=nil{
 	// 	log.Printf("Error in revalidating 'billItems' from valkey: %s",err)

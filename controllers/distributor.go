@@ -212,20 +212,7 @@ func DeleteDistributor(c *fiber.Ctx) error {
 			"error": "Error in deleting distributor " + err.Error(),
 		})
 	}
-	// if result := database.DbConn.Where("id=? AND user_id=?", distributorId, userId).Delete(&model.Distributor{}); result.Error != nil {
-	// 	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
-	// 		log.Printf("No distributor found %s", result.Error.Error())
-	// 		return c.Status(400).JSON("Error:No Record found")
-	// 	}
-	// 	if errors.As(result.Error, &pgErr) {
-	// 		if pgErr.Code == "23503" {
-	// 			log.Printf("Error:Delete associated domains and bills to delete distributor. %s", result.Error.Error())
-	// 			return c.Status(400).JSON("Error:Delete associated domains and bills to delete distributor")
-	// 		}
-	// 	}
-	// 	log.Printf("Error deleting Distributor %s", result.Error.Error())
-	// 	return c.Status(500).JSON("Error deleting Distributor")
-	// }
+
 	// if err := valkeyCache.Revalidate("distributors:" + userId); err != nil {
 	// 	log.Printf("Error in revalidating distributors cache: %s", err)
 	// }
