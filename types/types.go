@@ -47,7 +47,7 @@ type Bill struct {
 	DistributorId  string        `json:"distributor_id"` //do not change, matched with client side schema
 	DomainId       string        `json:"domain_id"`
 	Date          	time.Time      `json:"date"`
-	IsPaid        	pgtype.Bool            `json:"isPaid"`
+	IsPaid        	pgtype.Bool            `json:"is_paid"`
 	BillItems     	[]BillItem 		`json:"bill_items"`
 	TotalAmount   	pgtype.Int4              `json:"totalAmount"`
 }
