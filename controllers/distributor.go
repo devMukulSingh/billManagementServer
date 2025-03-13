@@ -1,16 +1,14 @@
 package controller
 
 import (
+	"errors"
 	"log"
 	"github.com/devMukulSingh/billManagementServer.git/database"
-	dbconnection "github.com/devMukulSingh/billManagementServer.git/dbConnection"
+	 "github.com/devMukulSingh/billManagementServer.git/dbConnection"
 	"github.com/devMukulSingh/billManagementServer.git/types"
-
-	// "github.com/devMukulSingh/billManagementServer.git/model"
-	// "github.com/devMukulSingh/billManagementServer.git/db"
+	"github.com/jackc/pgx/v5/pgconn"
 	// "github.com/devMukulSingh/billManagementServer.git/valkeyCache"
 	"github.com/gofiber/fiber/v2"
-	// "github.com/jackc/pgx/v5/pgconn"
 )
 
 func GetDistributors(c *fiber.Ctx) error {
@@ -28,7 +26,6 @@ func GetDistributors(c *fiber.Ctx) error {
 	// 	c.Set("Content-Type", "application/json")
 	// 	return c.SendString(cached)
 	// }
-
 
 	data, err := dbconnection.Queries.GetDistributors(dbconnection.Ctx, database.GetDistributorsParams{
 		UserID: userId,
@@ -50,8 +47,8 @@ func GetDistributors(c *fiber.Ctx) error {
 		})
 	}
 	type Response struct {
-		Data  []database.GetDistributorsRow			 `json:"data"`
-		Count int64          						`json:"count"`
+		Data  []database.GetDistributorsRow `json:"data"`
+		Count int64                         `json:"count"`
 	}
 	response := Response{
 		Data:  data,
@@ -117,25 +114,19 @@ func PostDistributor(c *fiber.Ctx) error {
 		UserID:   userId,
 	}); err != nil {
 		log.Print(err.Error())
-		return c.Status(400).JSON(fiber.Map{
+		var pgErr *pgconn.PgError
+		if ok := errors.As(err, &pgErr); ok {
+			if pgErr.Code == "23505" {
+				return c.Status(409).JSON(fiber.Map{
+					"error": "Distributor already exists, try another",
+				})
+			}
+		}
+		return c.Status(500).JSON(fiber.Map{
 			"error": "Error in posting distributor " + err.Error(),
 		})
 	}
-	// result := database.DbConn.Create(&model.Distributor{
-	// 	DomainID: body.DomainID,
-	// 	Name:     body.DistributorName,
-	// 	UserID:   userId,
-	// })
-	// if result.Error != nil {
-	// 	if errors.Is(result.Error, gorm.ErrDuplicatedKey) {
-	// 		log.Print(result.Error.Error())
-	// 		return c.Status(409).JSON(fiber.Map{
-	// 			"error": "Distributor already exists, try another",
-	// 		})
-	// 	}
-	// 	log.Printf("Error in saving Distributor into db %s", result.Error.Error())
-	// 	return c.Status(500).JSON("Internal server error")
-	// }
+
 	// if err := valkeyCache.Revalidate("distributors:" + "1" + ":" + userId); err != nil {
 	// 	log.Printf("Error in revalidating distributors cache: %s", err)
 	// }
@@ -155,11 +146,6 @@ func UpdateDistributor(c *fiber.Ctx) error {
 		})
 	}
 
-	// type exisitingDistributor struct {
-	// 	Name     string `json:"distributor_name"`
-	// 	DomainId string `json:"domain_id"`
-	// }
-
 	body := new(types.Distributor)
 
 	if err := c.BodyParser(body); err != nil {
@@ -174,19 +160,18 @@ func UpdateDistributor(c *fiber.Ctx) error {
 		DomainID: body.DomainID,
 	}); err != nil {
 		log.Print(err.Error())
+		var pgErr *pgconn.PgError
+		if ok := errors.As(err, &pgErr); ok {
+			if pgErr.Code == "23505" {
+				return c.Status(409).JSON(fiber.Map{
+					"error": "Distributor already exists, try another",
+				})
+			}
+		}
 		return c.Status(500).JSON(fiber.Map{
 			"error": "Error in updating distributor " + err.Error(),
 		})
 	}
-	// if result := database.DbConn.Model(&model.Distributor{}).Where("id=? AND user_id=?", distributorId, userId).Updates(
-	// 	model.Distributor{
-	// 		Name:     body.Name,
-	// 		DomainID: body.DomainId,
-	// 	},
-	// ); result.Error != nil {
-	// 	log.Printf("Error updating distributor %s", result.Error.Error())
-	// 	return c.Status(500).JSON("Error updating distributor")
-	// }
 	// if err := valkeyCache.Revalidate("distributors:" + userId); err != nil {
 	// 	log.Printf("Error in revalidating distributors cache: %s", err)
 	// }
@@ -197,19 +182,32 @@ func DeleteDistributor(c *fiber.Ctx) error {
 
 	var params types.DistributorParams
 
-	if err := c.ParamsParser(&params);err!=nil{
+	if err := c.ParamsParser(&params); err != nil {
 		log.Print(err)
 		return c.Status(400).JSON(fiber.Map{
-			"error":"Error in parsing parms :" + err.Error(),
+			"error": "Error in parsing parms :" + err.Error(),
 		})
 	}
-	// var pgErr *pgconn.PgError 
 
 	if err := dbconnection.Queries.DeleteDistributor(dbconnection.Ctx, database.DeleteDistributorParams{
 		ID:     params.DistributorId,
 		UserID: params.UserId,
 	}); err != nil {
+		var pgErr *pgconn.PgError
 		log.Print(err.Error())
+		if ok := errors.As(err,&pgErr);ok{
+			switch code := pgErr.Code;code {
+			case "23505" :
+				return c.Status(400).JSON(fiber.Map{
+					"error":"No Record found",
+				})
+			case "23503":
+				return c.Status(400).JSON(fiber.Map{
+					"error":"Delete associated bills to delete distributor",
+				})
+			default : break
+			}
+		}
 		return c.Status(500).JSON(fiber.Map{
 			"error": "Error in deleting distributor " + err.Error(),
 		})

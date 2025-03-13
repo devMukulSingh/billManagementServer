@@ -61,5 +61,5 @@ CREATE TABLE IF NOT EXISTS bill_items(
     created_at                  timestamp           NOT NULL DEFAULT NOW(),    
     updated_at                  timestamp           NOT NULL DEFAULT NOW(),     
     FOREIGN KEY (product_id) REFERENCES products(id),
-    FOREIGN KEY (bill_id) REFERENCES bills(id)
+    FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE
 );
