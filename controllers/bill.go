@@ -1,6 +1,6 @@
 package controller
 
-import (	
+import (
 	// "encoding/json"
 	// "github.com/devMukulSingh/billManagementServer.git/db"
 	// "time"
@@ -8,6 +8,7 @@ import (
 	// "github.com/devMukulSingh/billManagementServer.git/model"
 	// "encoding/json"
 	// "errors"
+	"fmt"
 	"log"
 
 	"github.com/devMukulSingh/billManagementServer.git/database"
@@ -35,7 +36,7 @@ func GetBills(c *fiber.Ctx) error {
 
 	data, err := dbconnection.Queries.GetBills(dbconnection.Ctx, database.GetBillsParams{
 		UserID: userId,
-		Offset: (queryParams.Page -1 ) * queryParams.Limit,
+		Offset: (queryParams.Page - 1) * queryParams.Limit,
 		Limit:  queryParams.Limit,
 	})
 	if err != nil {
@@ -43,19 +44,19 @@ func GetBills(c *fiber.Ctx) error {
 			"error": "Error in getting Bills " + err.Error(),
 		})
 	}
-	count,err := dbconnection.Queries.GetBillsCount(dbconnection.Ctx,userId);
-	if err != nil{
+	count, err := dbconnection.Queries.GetBillsCount(dbconnection.Ctx, userId)
+	if err != nil {
 		log.Print(err.Error())
 		return c.Status(500).JSON(fiber.Map{
-			"error":"Error in getting counts :" + err.Error(),
+			"error": "Error in getting counts :" + err.Error(),
 		})
 	}
-	type Response struct{
-		Data		 []database.GetBillsRow		`json:"data"`
-		Count			int64					`json:"count"`
+	type Response struct {
+		Data  []database.GetBillsRow `json:"data"`
+		Count int64                  `json:"count"`
 	}
 	response := Response{
-		Data:data,
+		Data:  data,
 		Count: count,
 	}
 	// cache, err := valkeyCache.GetValue("bills:" + userId)
@@ -78,14 +79,19 @@ func PostBill(c *fiber.Ctx) error {
 
 	body := new(types.Bill)
 	userId := c.Params("userId")
+	c.BodyParser(body)
 
-	if err := c.BodyParser(body); err != nil {
-		log.Printf("error parsing request body %s", err.Error())
-		return c.Status(400).JSON("Error :error parsing request body")
+	tx, err := dbconnection.Connection.Begin(dbconnection.Ctx)
+	if err != nil {
+		log.Print(err)
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Unable to begin transaction : " + err.Error(),
+		})
 	}
+	defer tx.Rollback(dbconnection.Ctx)
 
-	//TODO: execute all queries inside transaction
-	billId, err := dbconnection.Queries.PostBill(dbconnection.Ctx, database.PostBillParams{
+	qtx := database.New(tx)
+	billId, err := qtx.PostBill(dbconnection.Ctx, database.PostBillParams{
 		Date:          body.Date,
 		TotalAmount:   body.TotalAmount,
 		IsPaid:        body.IsPaid,
@@ -94,18 +100,15 @@ func PostBill(c *fiber.Ctx) error {
 		DomainID:      body.DomainId,
 	})
 	if err != nil {
-		log.Print(err)
-		return c.Status(400).JSON(fiber.Map{
-			"error": "Error in posting bill " + err.Error(),
-		})
+		return fmt.Errorf("failed to create bill: %w", err)
 	}
 	n := len(body.BillItems)
-	ids := make([]string,n);
-	quantities := make([]int32,n);
-	amounts := make([]int32,n);
-	productIds := make([]string,n);
-	billIds := make([]string,n);
-	
+	ids := make([]string, n)
+	quantities := make([]int32, n)
+	amounts := make([]int32, n)
+	productIds := make([]string, n)
+	billIds := make([]string, n)
+
 	for i, billItem := range body.BillItems {
 		quantities[i] = billItem.Quantity
 		amounts[i] = billItem.Amount
@@ -113,29 +116,24 @@ func PostBill(c *fiber.Ctx) error {
 		billIds[i] = billId
 		ids[i] = uuid.NewString()
 	}
-	
-	if err := dbconnection.Queries.BatchInsertBillItems(dbconnection.Ctx,database.BatchInsertBillItemsParams{
-		Ids: ids,
+
+	if err := qtx.BatchInsertBillItems(dbconnection.Ctx, database.BatchInsertBillItemsParams{
+		Ids:        ids,
 		Quantities: quantities,
-		Amounts: amounts,
+		Amounts:    amounts,
 		Productids: productIds,
-		Billids: billIds,
-	} ); err != nil {
-		log.Print(err.Error())
+		Billids:    billIds,
+	}); err != nil {
+		return fmt.Errorf("failed to create bill: %w", err)
+	}
+
+	if err := tx.Commit(dbconnection.Ctx); err != nil {
+		log.Print(err)
 		return c.Status(500).JSON(fiber.Map{
 			"error": "Error in posting bill " + err.Error(),
 		})
 	}
-	// billItems,err := json.Marshal(body.BillItems);
-	// if err!=nil{
-	// 		log.Print(err)
-	// }
-	// if err:= dbconnection.Queries.BatchInsertBillItems(dbconnection.Ctx,billItems);
-	// err!= nil{
-	// 	log.Print(err)
-	// }
 
-	// }
 	// if err := valkeyCache.Revalidate("bills:" + userId); err != nil {
 	// 	log.Printf("Error in revalidating bills cache: %s", err)
 	// }
@@ -147,65 +145,72 @@ func PostBill(c *fiber.Ctx) error {
 
 func UpdateBill(c *fiber.Ctx) error {
 
-	billId := c.Params("billId")
-	userId := c.Params("userId")
-
-	body := new(types.Bill)
-	if err := c.BodyParser(body); err != nil {
-		log.Printf("error parsing request body %s", err.Error())
-		return c.Status(400).JSON("Error :error parsing request body")
+	var params types.BillParams;
+	if err:= c.ParamsParser(&params); err!=nil{
+		return c.Status(400).JSON(fiber.Map{
+			"error":"Error parsing params :"+ err.Error(),
+		})
 	}
+	body := new(types.Bill)
+	c.BodyParser(body)
 
-	//TODO: execute all queries inside transaction
-	if err := dbconnection.Queries.UpdateBill(dbconnection.Ctx, database.UpdateBillParams{
+	tx, err := dbconnection.Connection.Begin(dbconnection.Ctx)
+	if err != nil {
+		log.Print(err)
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Unable to begin transaction : " + err.Error(),
+		})
+	}
+	defer tx.Rollback(dbconnection.Ctx)
+	qtx := database.New(tx)
+
+	if err := qtx.UpdateBill(dbconnection.Ctx, database.UpdateBillParams{
+		ID: params.BillId,
 		Date:          body.Date,
 		TotalAmount:   body.TotalAmount,
 		IsPaid:        body.IsPaid,
-		UserID:        userId,
+		UserID:        params.UserId,
 		DistributorID: body.DistributorId,
 		DomainID:      body.DomainId,
-	});err != nil {
-		log.Print(err)
-		return c.Status(400).JSON(fiber.Map{
-			"error": "Error in posting bill " + err.Error(),
-		})
+	}); err != nil {
+		return fmt.Errorf("error in updating bill:  %w" , err)
 	}
 
 	n := len(body.BillItems)
-	ids := make([]string,n);
-	quantities := make([]int32,n);
-	amounts := make([]int32,n);
-	productIds := make([]string,n);
-	billIds := make([]string,n);
-	
+	ids := make([]string, n)
+	quantities := make([]int32, n)
+	amounts := make([]int32, n)
+	productIds := make([]string, n)
+	billIds := make([]string, n)
+
 	for i, billItem := range body.BillItems {
 		quantities[i] = billItem.Quantity
 		amounts[i] = billItem.Amount
 		productIds[i] = billItem.ProductID
-		billIds[i] = billId
+		billIds[i] = params.BillId
 		ids[i] = uuid.NewString()
 	}
 
-	if err:= dbconnection.Queries.DeleteManyBillItems(dbconnection.Ctx,billId);err!=nil{
-		log.Print(err.Error())
-		return c.Status(500).JSON(fiber.Map{
-			"error":"Error deleting bill items : "+ err.Error(),
-		})
-	}
-	
-	if err := dbconnection.Queries.BatchInsertBillItems(dbconnection.Ctx,database.BatchInsertBillItemsParams{
-		Ids: ids,
-		Quantities: quantities,
-		Amounts: amounts,
-		Productids: productIds,
-		Billids: billIds,
-	} ); err != nil {
-		log.Print(err.Error())
-		return c.Status(500).JSON(fiber.Map{
-			"error": "Error in posting bill " + err.Error(),
-		})
+	if err := qtx.DeleteManyBillItems(dbconnection.Ctx, params.BillId); err != nil {
+		return fmt.Errorf("error deleting bill items: %w" , err)
 	}
 
+	if err := qtx.BatchInsertBillItems(dbconnection.Ctx, database.BatchInsertBillItemsParams{
+		Ids:        ids,
+		Quantities: quantities,
+		Amounts:    amounts,
+		Productids: productIds,
+		Billids:    billIds,
+	}); err != nil {
+		log.Print(err.Error())
+		return fmt.Errorf("error in updating bill %w", err)
+	}
+	if err := tx.Commit(dbconnection.Ctx); err != nil {
+		log.Print(err)
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Error in updating bill " + err.Error(),
+		})
+	}
 	// if err := valkeyCache.Revalidate("bills:" + userId); err != nil {
 	// 	log.Printf("Error in revalidating bills cache: %s", err)
 	// }
@@ -242,4 +247,3 @@ func DeleteBill(c *fiber.Ctx) error {
 	// }
 	return c.Status(200).JSON("Bill deleted successfully")
 }
-

@@ -25,7 +25,7 @@ func GetValidationErrors(validationStruct interface{}) []types.IError {
 			var elem types.IError
 			elem.Field = err.Field()
 			elem.Tag = err.Tag()
-			elem.Value = err.Param()
+			// elem.Value = err.Param()
 			validationErrors = append(validationErrors, elem)
 		}
 		return validationErrors
@@ -45,7 +45,11 @@ func ValidateQueryStrings(c *fiber.Ctx) error {
 func ValidateBody[BodyType any]() fiber.Handler {
 	return func(c *fiber.Ctx) error {
 		body := new(BodyType)
-		c.BodyParser(body)
+		if err:= c.BodyParser(body);err!=nil{
+			return c.Status(400).JSON(fiber.Map{
+				"error":"Error parsing req body :" + err.Error(),
+			})
+		}
 		if validationErrors := GetValidationErrors(body); validationErrors != nil {
 			return c.Status(400).JSON(validationErrors)
 		}

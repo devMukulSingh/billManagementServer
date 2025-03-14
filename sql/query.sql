@@ -135,7 +135,7 @@
     ORDER BY bills.created_at DESC;
 
 -- name: GetBills :many
-    SELECT bills.id,bills.date,bills.is_paid,bills.created_at,
+    SELECT bills.id,bills.date,bills.is_paid,bills.created_at, bills.total_amount,
     json_build_object(
         'id',domains.id,
         'name',domains.name
@@ -187,7 +187,7 @@
 
 -- name: UpdateBill :exec
     UPDATE bills 
-    SET total_amount=$3, is_paid=$4, user_id=$5, distributor_id=$6, domain_id=$7,date=$8
+    SET total_amount=$3,is_paid=$4,distributor_id=$5,domain_id=$6,date=$7,updated_at=now()
     WHERE id = $1 AND user_id=$2;
 
 -- name: DeleteBill :exec

@@ -22,8 +22,8 @@ type ProductParams struct{
 	UserId			 	string				`params:"userId" validate:"required,min=1"`
 }
 type BillParams struct{
-	BillId 			string 			`params:"billId" validate:"required, min=1"`
-	UserId			 	string				`params:"userId" validate:"required,min=1"`
+	BillId 				string 					`params:"billId" validate:"required, min=1"`
+	UserId			 	string					`params:"userId" validate:"required,min=1"`
 }
 type Query struct {
 	Page   int32 `query:"page" validate:"required,numeric"`
@@ -44,7 +44,7 @@ type IError struct {
 }
 type Product struct {
 	Name   string 				`json:"name" validate:"required,min=1"` //do not change, matched with client side schema
-	Rate   int32    			`json:"rate" validate:"required,numeric"`
+	Rate   int32    			`json:"rate" validate:"required"`
 }
 
 type Bill struct {				
@@ -53,11 +53,11 @@ type Bill struct {
 	Date          	time.Time      			`json:"date" validate:"required"`
 	IsPaid        	pgtype.Bool            	`json:"is_paid" validate:"required"`
 	BillItems     	[]BillItem 				`json:"bill_items" validate:"required,min=1"`
-	TotalAmount   	pgtype.Int4              `json:"totalAmount" validate:"required,numeric"`
+	TotalAmount   	pgtype.Int4              `json:"totalAmount" validate:"required"`
 }
 type BillItem struct{
 	ID					 string			`json:"id" validate:"required,min=1"`//do not change, matched with client side schema
-	Amount				int32			`json:"amount" validate:"required,numeric"`
+	Amount				int32			`json:"amount" validate:"required"`
 	Quantity			int32			`json:"quantity" validate:"required,min=1"`
 	ProductID			 string			`json:"product_id" validate:"required,min=1"`
 }

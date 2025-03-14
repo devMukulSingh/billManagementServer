@@ -286,7 +286,7 @@ func (q *Queries) GetAllProducts(ctx context.Context, userID string) ([]Product,
 }
 
 const getBills = `-- name: GetBills :many
-    SELECT bills.id,bills.date,bills.is_paid,bills.created_at,
+    SELECT bills.id,bills.date,bills.is_paid,bills.created_at, bills.total_amount,
     json_build_object(
         'id',domains.id,
         'name',domains.name
@@ -339,6 +339,7 @@ type GetBillsRow struct {
 	Date        time.Time       `json:"date"`
 	IsPaid      pgtype.Bool     `json:"is_paid"`
 	CreatedAt   time.Time       `json:"created_at"`
+	TotalAmount pgtype.Int4     `json:"total_amount"`
 	Domain      json.RawMessage `json:"domain"`
 	Distributor json.RawMessage `json:"distributor"`
 	BillItems   json.RawMessage `json:"bill_items"`
@@ -358,6 +359,7 @@ func (q *Queries) GetBills(ctx context.Context, arg GetBillsParams) ([]GetBillsR
 			&i.Date,
 			&i.IsPaid,
 			&i.CreatedAt,
+			&i.TotalAmount,
 			&i.Domain,
 			&i.Distributor,
 			&i.BillItems,
@@ -645,7 +647,7 @@ func (q *Queries) PostUser(ctx context.Context, arg PostUserParams) error {
 
 const updateBill = `-- name: UpdateBill :exec
     UPDATE bills 
-    SET total_amount=$3, is_paid=$4, user_id=$5, distributor_id=$6, domain_id=$7,date=$8
+    SET total_amount=$3,is_paid=$4,distributor_id=$5, domain_id=$6,date=$7, updated_at=now()
     WHERE id = $1 AND user_id=$2
 `
 
@@ -654,7 +656,6 @@ type UpdateBillParams struct {
 	UserID        string      `json:"user_id"`
 	TotalAmount   pgtype.Int4 `json:"total_amount"`
 	IsPaid        pgtype.Bool `json:"is_paid"`
-	UserID_2      string      `json:"user_id_2"`
 	DistributorID string      `json:"distributor_id"`
 	DomainID      string      `json:"domain_id"`
 	Date          time.Time   `json:"date"`
@@ -666,7 +667,6 @@ func (q *Queries) UpdateBill(ctx context.Context, arg UpdateBillParams) error {
 		arg.UserID,
 		arg.TotalAmount,
 		arg.IsPaid,
-		arg.UserID_2,
 		arg.DistributorID,
 		arg.DomainID,
 		arg.Date,
