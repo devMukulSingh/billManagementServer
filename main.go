@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	// "github.com/devMukulSingh/billManagementServer.git/db"
-	dbconnection "github.com/devMukulSingh/billManagementServer.git/dbConnection"
+	 "github.com/devMukulSingh/billManagementServer.git/dbConnection"
 	"github.com/devMukulSingh/billManagementServer.git/lib"
 	"github.com/devMukulSingh/billManagementServer.git/router"
 	"github.com/devMukulSingh/billManagementServer.git/valkeyCache"
@@ -16,7 +16,7 @@ import (
 
 func main() {
 	if err := godotenv.Load(".env"); err != nil {
-		log.Fatal("Error loading dotenv")
+		log.Fatal("Error loading dotenv : " + err.Error())
 	}
 
 	app := fiber.New()
