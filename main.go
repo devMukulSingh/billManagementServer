@@ -23,7 +23,7 @@ func main() {
 
 	app.Use(logger.New())
 	app.Use(cors.New(cors.Config{
-		AllowOrigins: constants.BASE_URL_CLIENT,
+		AllowOrigins: utils.GetBaseUrlClient(),
 	}))
 
 	if err := valkeyCache.Connect();err!=nil{
