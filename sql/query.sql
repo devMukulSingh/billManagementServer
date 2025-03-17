@@ -138,6 +138,37 @@
 
 
 ------------------BILLS------------------------------
+-- name: GetSearchedBills :many
+    SELECT bills.id, bills.date, bills.is_paid, bills.created_at,
+    json_build_object(
+        "id",domains.id,
+        "name",domains.name
+    ) as domain,
+    json_build_object(
+        "id",distributors.id,
+        "name",distributors.name,
+        "domain_id",distributors.domain_id
+    ) as distributor,
+    json_agg(
+        json_build_object(
+            "id",bill_items.id,
+            "quantity",bill_items.quantity,
+            "amount",bill_items.amount,
+            "product",json_build_object(
+                "name",products.name,
+                "id" , products.id,
+                "rate",products.rate
+            )
+        ) 
+    ) as bill_items
+    FROM bills
+    JOIN domains ON domains.id = bills.domain_id
+    JOIN distributors ON distributors.id = bills.distributor_id
+    JOIN bill_items ON bill_items.bill_id = bills.id       
+    JOIN products ON products.user_id = bills.user_id                                                                                                                     
+    WHERE bills.created_at BETWEEN $1 AND $2 AND bills.user_id = $3
+    ORDER BY bills.created_at DESC
+    OFFSET $4 LIMIT $5;   
 -- name: GetAllBills :many
     SELECT bills.id, bills.date, bills.is_paid, bills.created_at,
     json_build_object(
@@ -214,6 +245,10 @@
 -- name: GetBillsCount :one
     SELECT COUNT(*) FROM bills
     WHERE user_id = $1;
+
+-- name: GetSearchedBillsCount :one
+    SELECT COUNT(*) FROM bills
+    WHERE created_at BETWEEN $1 AND $2 AND user_id = $3;
  
 -- name: PostBill :one
     INSERT INTO bills(id,date,total_amount,is_paid,user_id,distributor_id,domain_id) 
@@ -231,14 +266,14 @@
 
 ------------BILL_ITEMS-------------
 -- name: BatchInsertBillItems :exec
-INSERT INTO bill_items(id, quantity, amount, product_id, bill_id)
-VALUES (
-    unnest(@ids::text[]), 
-    unnest(@quantities::int[]), 
-    unnest(@amounts::int[]), 
-    unnest(@productIds::text[]), 
-    unnest(@billIds::text[]) 
-);
+    INSERT INTO bill_items(id, quantity, amount, product_id, bill_id)
+    VALUES (
+        unnest(@ids::text[]), 
+        unnest(@quantities::int[]), 
+        unnest(@amounts::int[]), 
+        unnest(@productIds::text[]), 
+        unnest(@billIds::text[]) 
+    );
 
 -- name: DeleteManyBillItems :exec
     DELETE FROM bill_items 

@@ -1,26 +1,58 @@
 package controller
 
 import (
-	// "encoding/json"
-	// "github.com/devMukulSingh/billManagementServer.git/db"
-	// "time"
-	// "github.com/jackc/pgx/v5/pgtype"
-	// "github.com/devMukulSingh/billManagementServer.git/model"
-	// "encoding/json"
-	// "errors"
 	"fmt"
 	"log"
-
 	"github.com/devMukulSingh/billManagementServer.git/database"
 	"github.com/devMukulSingh/billManagementServer.git/dbConnection"
 	"github.com/devMukulSingh/billManagementServer.git/types"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	// "github.com/jackc/pgx/v5/pgtype"
-	// "github.com/go-playground/validator/v10"
 	// "github.com/devMukulSingh/billManagementServer.git/valkeyCache"
-	// "gorm.io/gorm/clause"
 )
+
+func GetSearchedBills(c *fiber.Ctx) error {
+	userId := c.Params("userId")
+	var queries types.SearchBillsQuery
+	if err := c.QueryParser(&queries); err != nil {
+		log.Print(err)
+	}
+
+	data, err := dbconnection.Queries.GetSearchedBills(dbconnection.Ctx, database.GetSearchedBillsParams{
+		UserID:      userId,
+		Offset:      (queries.Page - 1) * queries.Limit,
+		Limit:       queries.Limit,
+		CreatedAt:   queries.StartDate,
+		CreatedAt_2: queries.EndDate,
+	})
+	if err != nil {
+		log.Print(err)
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Error in getting searched bills : " + err.Error(),
+		})
+	}
+	count, err := dbconnection.Queries.GetSearchedBillsCount(dbconnection.Ctx, database.GetSearchedBillsCountParams{
+		UserID:      userId,
+		CreatedAt:   queries.StartDate,
+		CreatedAt_2: queries.EndDate,
+	})
+	if err != nil {
+		log.Print(err)
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Error in getting searched bills : " + err.Error(),
+		})
+	}
+
+	type Response struct{
+		Data		[]database.GetSearchedBillsRow		`json:"data"`
+		Count 		int64			`json:"count"`
+	}
+	return c.Status(200).JSON(Response{
+		Data: data,
+		Count: count,
+	})
+
+}
 
 func GetBills(c *fiber.Ctx) error {
 
@@ -145,10 +177,10 @@ func PostBill(c *fiber.Ctx) error {
 
 func UpdateBill(c *fiber.Ctx) error {
 
-	var params types.BillParams;
-	if err:= c.ParamsParser(&params); err!=nil{
+	var params types.BillParams
+	if err := c.ParamsParser(&params); err != nil {
 		return c.Status(400).JSON(fiber.Map{
-			"error":"Error parsing params :"+ err.Error(),
+			"error": "Error parsing params :" + err.Error(),
 		})
 	}
 	body := new(types.Bill)
@@ -165,7 +197,7 @@ func UpdateBill(c *fiber.Ctx) error {
 	qtx := database.New(tx)
 
 	if err := qtx.UpdateBill(dbconnection.Ctx, database.UpdateBillParams{
-		ID: params.BillId,
+		ID:            params.BillId,
 		Date:          body.Date,
 		TotalAmount:   body.TotalAmount,
 		IsPaid:        body.IsPaid,
@@ -173,7 +205,7 @@ func UpdateBill(c *fiber.Ctx) error {
 		DistributorID: body.DistributorId,
 		DomainID:      body.DomainId,
 	}); err != nil {
-		return fmt.Errorf("error in updating bill:  %w" , err)
+		return fmt.Errorf("error in updating bill:  %w", err)
 	}
 
 	n := len(body.BillItems)
@@ -192,7 +224,7 @@ func UpdateBill(c *fiber.Ctx) error {
 	}
 
 	if err := qtx.DeleteManyBillItems(dbconnection.Ctx, params.BillId); err != nil {
-		return fmt.Errorf("error deleting bill items: %w" , err)
+		return fmt.Errorf("error deleting bill items: %w", err)
 	}
 
 	if err := qtx.BatchInsertBillItems(dbconnection.Ctx, database.BatchInsertBillItemsParams{

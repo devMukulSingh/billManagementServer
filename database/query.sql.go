@@ -156,7 +156,6 @@ type GetAllBillsRow struct {
 	BillItems   json.RawMessage `json:"bill_items"`
 }
 
-// ----------------BILLS------------------------------
 func (q *Queries) GetAllBills(ctx context.Context, userID string) ([]GetAllBillsRow, error) {
 	rows, err := q.db.Query(ctx, getAllBills, userID)
 	if err != nil {
@@ -562,6 +561,110 @@ type GetSearchDomainsCountParams struct {
 
 func (q *Queries) GetSearchDomainsCount(ctx context.Context, arg GetSearchDomainsCountParams) (int64, error) {
 	row := q.db.QueryRow(ctx, getSearchDomainsCount, arg.Name, arg.UserID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const getSearchedBills = `-- name: GetSearchedBills :many
+    SELECT bills.id, bills.date, bills.is_paid, bills.created_at,
+    json_build_object(
+        "id",domains.id,
+        "name",domains.name
+    ) as domain,
+    json_build_object(
+        "id",distributors.id,
+        "name",distributors.name,
+        "domain_id",distributors.domain_id
+    ) as distributor,
+    json_agg(
+        json_build_object(
+            "id",bill_items.id,
+            "quantity",bill_items.quantity,
+            "amount",bill_items.amount,
+            "product",json_build_object(
+                "name",products.name,
+                "id" , products.id,
+                "rate",products.rate
+            )
+        ) 
+    ) as bill_items
+    FROM bills
+    JOIN domains ON domains.id = bills.domain_id
+    JOIN distributors ON distributors.id = bills.distributor_id
+    JOIN bill_items ON bill_items.bill_id = bills.id       
+    JOIN products ON products.user_id = bills.user_id                                                                                                                     
+    WHERE bills.created_at BETWEEN $1 AND $2 AND bills.user_id = $3
+    ORDER BY bills.created_at DESC
+    OFFSET $4 LIMIT $5
+`
+
+type GetSearchedBillsParams struct {
+	CreatedAt   time.Time `json:"created_at"`
+	CreatedAt_2 time.Time `json:"created_at_2"`
+	UserID      string    `json:"user_id"`
+	Offset      int32     `json:"offset"`
+	Limit       int32     `json:"limit"`
+}
+
+type GetSearchedBillsRow struct {
+	ID          string          `json:"id"`
+	Date        time.Time       `json:"date"`
+	IsPaid      pgtype.Bool     `json:"is_paid"`
+	CreatedAt   time.Time       `json:"created_at"`
+	Domain      json.RawMessage `json:"domain"`
+	Distributor json.RawMessage `json:"distributor"`
+	BillItems   json.RawMessage `json:"bill_items"`
+}
+
+// ----------------BILLS------------------------------
+func (q *Queries) GetSearchedBills(ctx context.Context, arg GetSearchedBillsParams) ([]GetSearchedBillsRow, error) {
+	rows, err := q.db.Query(ctx, getSearchedBills,
+		arg.CreatedAt,
+		arg.CreatedAt_2,
+		arg.UserID,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetSearchedBillsRow
+	for rows.Next() {
+		var i GetSearchedBillsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Date,
+			&i.IsPaid,
+			&i.CreatedAt,
+			&i.Domain,
+			&i.Distributor,
+			&i.BillItems,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getSearchedBillsCount = `-- name: GetSearchedBillsCount :one
+    SELECT COUNT(*) FROM bills
+    WHERE created_at BETWEEN $1 AND $2 AND user_id = $3
+`
+
+type GetSearchedBillsCountParams struct {
+	CreatedAt   time.Time `json:"created_at"`
+	CreatedAt_2 time.Time `json:"created_at_2"`
+	UserID      string    `json:"user_id"`
+}
+
+func (q *Queries) GetSearchedBillsCount(ctx context.Context, arg GetSearchedBillsCountParams) (int64, error) {
+	row := q.db.QueryRow(ctx, getSearchedBillsCount, arg.CreatedAt, arg.CreatedAt_2, arg.UserID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
