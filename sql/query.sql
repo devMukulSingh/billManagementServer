@@ -41,6 +41,18 @@
 
 ---------------DISTRIBUTOR----------------
 
+-- name: GetSearchedDistributors :many
+    SELECT dist.id,dist.name,dist.created_at,
+    json_build_object(
+        'id', domains.id,
+        'name',domains.name
+    ) AS domain
+    FROM distributors AS dist
+    JOIN domains ON dist.domain_id = domains.id
+    WHERE LOWER(dist.name) LIKE $1 AND dist.user_id = $2 
+    ORDER BY dist.created_at DESC
+    OFFSET $3 LIMIT $4;
+
 -- name: GetAllDistributors :many
     SELECT dist.id,dist.name,dist.created_at,
     json_build_object(
@@ -67,6 +79,10 @@
 -- name: GetDistributorsCount :one
     SELECT COUNT(*) FROM distributors
     WHERE user_id = $1;
+
+-- name: GetSearchedDistributorsCount :one
+    SELECT COUNT(*) FROM distributors
+    WHERE LOWER(name) LIKE $1 AND user_id = $2;
 
 -- name: PostDistributor :exec
     INSERT INTO distributors(id,name,domain_id,user_id)

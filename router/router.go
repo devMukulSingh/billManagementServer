@@ -28,6 +28,7 @@ func SetupRoutes(app *fiber.App) {
 	domain.Put("/:domainId",middleware.ValidateBody[types.Domain](),controller.UpdateDomain)
 	domain.Delete("/:domainId",controller.DeleteDomain) 
 
+	distributor.Get("/",controller.GetSearchedDistributors)
 	distributor.Get("/get-all-distributors",controller.GetAllDistributors)
 	distributor.Get("/get-distributors",middleware.ValidateQueryStrings,controller.GetDistributors)
 	distributor.Post("/", middleware.ValidateBody[types.Distributor](), controller.PostDistributor)

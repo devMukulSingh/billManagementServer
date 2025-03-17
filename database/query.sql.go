@@ -186,7 +186,6 @@ func (q *Queries) GetAllBills(ctx context.Context, userID string) ([]GetAllBills
 }
 
 const getAllDistributors = `-- name: GetAllDistributors :many
-
     SELECT dist.id,dist.name,dist.created_at,
     json_build_object(
         'id', domains.id,
@@ -205,7 +204,6 @@ type GetAllDistributorsRow struct {
 	Domain    json.RawMessage `json:"domain"`
 }
 
-// -------------DISTRIBUTOR----------------
 func (q *Queries) GetAllDistributors(ctx context.Context, userID string) ([]GetAllDistributorsRow, error) {
 	rows, err := q.db.Query(ctx, getAllDistributors, userID)
 	if err != nil {
@@ -566,6 +564,82 @@ type GetSearchDomainsCountParams struct {
 
 func (q *Queries) GetSearchDomainsCount(ctx context.Context, arg GetSearchDomainsCountParams) (int64, error) {
 	row := q.db.QueryRow(ctx, getSearchDomainsCount, arg.Name, arg.UserID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const getSearchedDistributors = `-- name: GetSearchedDistributors :many
+
+    SELECT dist.id,dist.name,dist.created_at,
+    json_build_object(
+        'id', domains.id,
+        'name',domains.name
+    ) AS domain
+    FROM distributors AS dist
+    JOIN domains ON dist.domain_id = domains.id
+    WHERE LOWER(dist.name) LIKE $1 AND dist.user_id = $2 
+    ORDER BY dist.created_at DESC
+    OFFSET $3 LIMIT $4
+`
+
+type GetSearchedDistributorsParams struct {
+	Name   string `json:"name"`
+	UserID string `json:"user_id"`
+	Offset int32  `json:"offset"`
+	Limit  int32  `json:"limit"`
+}
+
+type GetSearchedDistributorsRow struct {
+	ID        string          `json:"id"`
+	Name      string          `json:"name"`
+	CreatedAt time.Time       `json:"created_at"`
+	Domain    json.RawMessage `json:"domain"`
+}
+
+// -------------DISTRIBUTOR----------------
+func (q *Queries) GetSearchedDistributors(ctx context.Context, arg GetSearchedDistributorsParams) ([]GetSearchedDistributorsRow, error) {
+	rows, err := q.db.Query(ctx, getSearchedDistributors,
+		arg.Name,
+		arg.UserID,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetSearchedDistributorsRow
+	for rows.Next() {
+		var i GetSearchedDistributorsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.CreatedAt,
+			&i.Domain,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getSearchedDistributorsCount = `-- name: GetSearchedDistributorsCount :one
+    SELECT COUNT(*) FROM distributors
+    WHERE LOWER(name) LIKE $1 AND user_id = $2
+`
+
+type GetSearchedDistributorsCountParams struct {
+	Name   string `json:"name"`
+	UserID string `json:"user_id"`
+}
+
+func (q *Queries) GetSearchedDistributorsCount(ctx context.Context, arg GetSearchedDistributorsCountParams) (int64, error) {
+	row := q.db.QueryRow(ctx, getSearchedDistributorsCount, arg.Name, arg.UserID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err

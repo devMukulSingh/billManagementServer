@@ -2,14 +2,60 @@ package controller
 
 import (
 	"errors"
-	"log"
 	"github.com/devMukulSingh/billManagementServer.git/database"
-	 "github.com/devMukulSingh/billManagementServer.git/dbConnection"
+	"github.com/devMukulSingh/billManagementServer.git/dbConnection"
 	"github.com/devMukulSingh/billManagementServer.git/types"
 	"github.com/jackc/pgx/v5/pgconn"
+	"log"
 	// "github.com/devMukulSingh/billManagementServer.git/valkeyCache"
 	"github.com/gofiber/fiber/v2"
 )
+
+func GetSearchedDistributors(c *fiber.Ctx) error {
+	userId := c.Params("userId")
+	type Query struct {
+		Page  int32  `query:"page"`
+		Limit int32  `query:"limit"`
+		Name  string `query:"name"`
+	}
+	var query Query
+	if err := c.QueryParser(&query); err != nil {
+		log.Print(err)
+	}
+	data, err := dbconnection.Queries.GetSearchedDistributors(dbconnection.Ctx, database.GetSearchedDistributorsParams{
+		Name:  "%" + query.Name + "%",
+		UserID: userId,
+		Offset: (query.Page - 1)*query.Limit,
+		Limit:  query.Limit,
+	})
+	if err != nil {
+		log.Print(err)
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Error in getting searched distributors :" + err.Error(),
+		})
+	}
+
+	count, err := dbconnection.Queries.GetSearchedDistributorsCount(dbconnection.Ctx, database.GetSearchedDistributorsCountParams{
+		Name:   "%" + query.Name + "%",
+		UserID: userId,
+	})
+	if err != nil {
+		log.Print(err)
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Error in getting searched distributors count :" + err.Error(),
+		})
+	}
+
+	type Response struct{
+		Data		[]database.GetSearchedDistributorsRow		`json:"data"`
+		Count 		int64			`json:"count"`
+	}
+
+	return c.Status(200).JSON(Response{
+		Data: data,
+		Count: count,
+	})
+}
 
 func GetDistributors(c *fiber.Ctx) error {
 
@@ -195,17 +241,18 @@ func DeleteDistributor(c *fiber.Ctx) error {
 	}); err != nil {
 		var pgErr *pgconn.PgError
 		log.Print(err.Error())
-		if ok := errors.As(err,&pgErr);ok{
-			switch code := pgErr.Code;code {
-			case "23505" :
+		if ok := errors.As(err, &pgErr); ok {
+			switch code := pgErr.Code; code {
+			case "23505":
 				return c.Status(400).JSON(fiber.Map{
-					"error":"No Record found",
+					"error": "No Record found",
 				})
 			case "23503":
 				return c.Status(400).JSON(fiber.Map{
-					"error":"Delete associated bills to delete distributor",
+					"error": "Delete associated bills to delete distributor",
 				})
-			default : break
+			default:
+				break
 			}
 		}
 		return c.Status(500).JSON(fiber.Map{
