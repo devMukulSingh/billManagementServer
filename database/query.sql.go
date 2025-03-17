@@ -553,6 +553,70 @@ func (q *Queries) GetProductsCount(ctx context.Context, userID string) (int64, e
 	return count, err
 }
 
+const getSearchDomainsCount = `-- name: GetSearchDomainsCount :one
+    SELECT COUNT(*) AS count
+    FROM domains
+    WHERE name LIKE $1 AND user_id = $2
+`
+
+type GetSearchDomainsCountParams struct {
+	Name   string `json:"name"`
+	UserID string `json:"user_id"`
+}
+
+func (q *Queries) GetSearchDomainsCount(ctx context.Context, arg GetSearchDomainsCountParams) (int64, error) {
+	row := q.db.QueryRow(ctx, getSearchDomainsCount, arg.Name, arg.UserID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const getSearchedDomains = `-- name: GetSearchedDomains :many
+    SELECT id,name,created_at
+    FROM domains
+    WHERE LOWER(name) LIKE $1 AND user_id=$2
+    ORDER BY created_at DESC
+    OFFSET $3 LIMIT $4
+`
+
+type GetSearchedDomainsParams struct {
+	Name   string `json:"name"`
+	UserID string `json:"user_id"`
+	Offset int32  `json:"offset"`
+	Limit  int32  `json:"limit"`
+}
+
+type GetSearchedDomainsRow struct {
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (q *Queries) GetSearchedDomains(ctx context.Context, arg GetSearchedDomainsParams) ([]GetSearchedDomainsRow, error) {
+	rows, err := q.db.Query(ctx, getSearchedDomains,
+		arg.Name,
+		arg.UserID,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetSearchedDomainsRow
+	for rows.Next() {
+		var i GetSearchedDomainsRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.CreatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const postBill = `-- name: PostBill :one
     INSERT INTO bills(id,date,total_amount,is_paid,user_id,distributor_id,domain_id) 
     VALUES(gen_random_uuid(),$6::timestamp ,$1,$2,$3,$4,$5)
@@ -647,7 +711,7 @@ func (q *Queries) PostUser(ctx context.Context, arg PostUserParams) error {
 
 const updateBill = `-- name: UpdateBill :exec
     UPDATE bills 
-    SET total_amount=$3,is_paid=$4,distributor_id=$5, domain_id=$6,date=$7, updated_at=now()
+    SET total_amount=$3,is_paid=$4,distributor_id=$5,domain_id=$6,date=$7,updated_at=now()
     WHERE id = $1 AND user_id=$2
 `
 

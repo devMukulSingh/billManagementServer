@@ -1,3 +1,9 @@
+-- name: GetSearchedDomains :many
+    SELECT id,name,created_at
+    FROM domains
+    WHERE LOWER(name) LIKE $1 AND user_id=$2
+    ORDER BY created_at DESC
+    OFFSET $3 LIMIT $4;
 
 -- name: GetAllDomains :one
     SELECT 
@@ -15,6 +21,11 @@
 -- name: GetDomainsCount :one
     SELECT COUNT(*) AS count FROM domains
     WHERE user_id=$1;
+
+-- name: GetSearchDomainsCount :one
+    SELECT COUNT(*) AS count
+    FROM domains
+    WHERE name LIKE $1 AND user_id = $2;
 
 -- name: PostDomain :exec
     INSERT INTO domains(id,name,user_id)

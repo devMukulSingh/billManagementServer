@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"strings"
 
 	"github.com/devMukulSingh/billManagementServer.git/database"
 	"github.com/devMukulSingh/billManagementServer.git/dbConnection"
@@ -14,23 +15,69 @@ import (
 	"github.com/gofiber/fiber/v2"
 )
 
+func GetSearchedDomains(c *fiber.Ctx) error {
+	type domainQuery struct {
+		Page  int32  `query:"page"`
+		Limit int32  `query:"limit"`
+		Name  string `query:"name"`
+	}
+	var queries domainQuery
+	if err := c.QueryParser(&queries); err != nil {
+		log.Print(err)
+	}
+	userId := c.Params("userId")
+
+	data, err := dbconnection.Queries.GetSearchedDomains(dbconnection.Ctx, database.GetSearchedDomainsParams{
+		Name: "%" + strings.ToLower(queries.Name) + "%",
+		UserID: userId,
+		Offset: (queries.Page - 1) * queries.Limit,
+		Limit: queries.Limit,
+	})
+	if err != nil {
+		log.Print(err)
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Error in getting searched domain :" + err.Error(),
+		})
+	}
+	count, err := dbconnection.Queries.GetSearchDomainsCount(dbconnection.Ctx, database.GetSearchDomainsCountParams{
+		Name:   "%" + strings.ToLower(queries.Name) + "%",
+		UserID: userId,
+	})
+	if err != nil {
+		log.Print(err)
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Error in getting searched domain count :" + err.Error(),
+		})
+	}
+	type Response struct {
+		Data  []database.GetSearchedDomainsRow		`json:"data"`
+		Count int64									`json:"count"`
+	}
+	response := Response{
+		Data:  data	,
+		Count: count,
+	}
+
+	return c.Status(200).JSON(response)
+}
+
 func GetAllDomains(c *fiber.Ctx) error {
 
 	var params types.DomainParams
-	if err := c.ParamsParser(&params); err!=nil{
-		log.Printf("Error parsing userId in params : %s",err.Error())
+	if err := c.ParamsParser(&params); err != nil {
+		log.Printf("Error parsing userId in params : %s", err.Error())
 		return c.Status(400).JSON(fiber.Map{
-			"error":"Error parsing userId in params",
+			"error": "Error parsing userId in params",
 		})
 	}
 
 	type Response struct {
-		Data  interface{} 		`json:"data"`
-		Count int64          	`json:"count"`
+		Data  interface{} `json:"data"`
+		Count int64       `json:"count"`
 	}
-	data,err := dbconnection.Queries.GetAllDomains(dbconnection.Ctx,params.UserID);
+	data, err := dbconnection.Queries.GetAllDomains(dbconnection.Ctx, params.UserID)
 
-	if err!=nil{
+	if err != nil {
 		log.Print(err.Error())
 	}
 
@@ -64,29 +111,29 @@ func GetDomains(c *fiber.Ctx) error {
 	// 	return c.Status(200).SendString(cache)
 	// }
 
-	data,err := dbconnection.Queries.GetDomains(dbconnection.Ctx,database.GetDomainsParams{
+	data, err := dbconnection.Queries.GetDomains(dbconnection.Ctx, database.GetDomainsParams{
 		UserID: userId,
 		Offset: (page - 1) * limit,
-		Limit: limit,
+		Limit:  limit,
 	})
-	
-	if err!=nil{
-		log.Fatalf("Error getting domains : %s", err.Error());
+
+	if err != nil {
+		log.Fatalf("Error getting domains : %s", err.Error())
 	}
 	//TODO: optmimise more to get count in a single query
-	count,err := dbconnection.Queries.GetDomainsCount(dbconnection.Ctx,userId)
-	if err!=nil{
-		log.Fatalf("Error getting domains : %s", err.Error());
+	count, err := dbconnection.Queries.GetDomainsCount(dbconnection.Ctx, userId)
+	if err != nil {
+		log.Fatalf("Error getting domains : %s", err.Error())
 	}
-	
+
 	// type Data struct{
 	// 	Name		string			`json:"name"`
 	// 	Id 			pgtype.UUID		`json:"id"`
 	// 	CreatedAt	pgtype.UUID		`json:"created_at"`
 	// }
 	type Response struct {
-		Data  []database.GetDomainsRow			 `json:"data"`
-		Count int64          					`json:"count"`
+		Data  []database.GetDomainsRow `json:"data"`
+		Count int64                    `json:"count"`
 	}
 	response := Response{
 		Data:  data,
@@ -104,11 +151,13 @@ func GetDomains(c *fiber.Ctx) error {
 
 func PostDomain(c *fiber.Ctx) error {
 
-	params := struct{ UserId    string	`params:"userId"`}{}
-	if err:= c.ParamsParser(&params); err!= nil{
+	params := struct {
+		UserId string `params:"userId"`
+	}{}
+	if err := c.ParamsParser(&params); err != nil {
 		log.Print(err)
 		return c.Status(400).JSON(fiber.Map{
-			"error":"Error parsing params " + err.Error(),
+			"error": "Error parsing params " + err.Error(),
 		})
 	}
 	body := new(types.Domain)
@@ -117,22 +166,22 @@ func PostDomain(c *fiber.Ctx) error {
 		log.Printf("Error parsing req body %s", err.Error())
 		return c.Status(400).JSON("Error parsing body")
 	}
-	
-	if err := dbconnection.Queries.PostDomain(dbconnection.Ctx,database.PostDomainParams{
-		Name: body.DomainName,
+
+	if err := dbconnection.Queries.PostDomain(dbconnection.Ctx, database.PostDomainParams{
+		Name:   body.DomainName,
 		UserID: params.UserId,
-	}); err!=nil{
+	}); err != nil {
 		var pgErr *pgconn.PgError
 		log.Print(err.Error())
-		if ok := errors.As(err,&pgErr) ; ok{
-			if pgErr.Code=="23505"{
+		if ok := errors.As(err, &pgErr); ok {
+			if pgErr.Code == "23505" {
 				return c.Status(400).JSON(fiber.Map{
-					"error":"Domain already exists, try another.",
+					"error": "Domain already exists, try another.",
 				})
 			}
 		}
 		return c.Status(500).JSON(fiber.Map{
-			"error":"Error posting domain : " + err.Error(),
+			"error": "Error posting domain : " + err.Error(),
 		})
 	}
 
@@ -159,11 +208,11 @@ func PostDomain(c *fiber.Ctx) error {
 }
 
 func UpdateDomain(c *fiber.Ctx) error {
-	var params types.DomainParams;
+	var params types.DomainParams
 
-	if err := c.ParamsParser(&params);err!=nil{
+	if err := c.ParamsParser(&params); err != nil {
 		return c.Status(400).JSON(fiber.Map{
-			"error":"Error parsing params :" + err.Error(),
+			"error": "Error parsing params :" + err.Error(),
 		})
 	}
 
@@ -174,22 +223,22 @@ func UpdateDomain(c *fiber.Ctx) error {
 		return c.Status(400).JSON("Error parsing body")
 	}
 
-	if err := dbconnection.Queries.UpdateDomain(dbconnection.Ctx,database.UpdateDomainParams{
-		ID: params.DomainID,
+	if err := dbconnection.Queries.UpdateDomain(dbconnection.Ctx, database.UpdateDomainParams{
+		ID:     params.DomainID,
 		UserID: params.UserID,
-		Name: body.DomainName,
-	}); err!=nil{
+		Name:   body.DomainName,
+	}); err != nil {
 		var pgErr *pgconn.PgError
 		log.Print(err.Error())
-		if ok := errors.As(err,&pgErr) ; ok{
-			if pgErr.Code=="23505"{
+		if ok := errors.As(err, &pgErr); ok {
+			if pgErr.Code == "23505" {
 				return c.Status(400).JSON(fiber.Map{
-					"error":"Domain already exists, try another.",
+					"error": "Domain already exists, try another.",
 				})
 			}
 		}
 		return c.Status(500).JSON(fiber.Map{
-			"error":"Error updating domain : " + err.Error(),
+			"error": "Error updating domain : " + err.Error(),
 		})
 	}
 
@@ -208,28 +257,28 @@ func UpdateDomain(c *fiber.Ctx) error {
 }
 
 func DeleteDomain(c *fiber.Ctx) error {
-	
-	var params types.DomainParams;
 
-	if err := c.ParamsParser(&params);err!=nil{
+	var params types.DomainParams
+
+	if err := c.ParamsParser(&params); err != nil {
 		log.Print(err.Error())
 		return c.Status(400).JSON(fiber.Map{
-			"error":"Error parsing params " + err.Error(),
+			"error": "Error parsing params " + err.Error(),
 		})
 	}
 
-	if err := dbconnection.Queries.DeleteDomain(dbconnection.Ctx,database.DeleteDomainParams{
-		ID: params.DomainID,
+	if err := dbconnection.Queries.DeleteDomain(dbconnection.Ctx, database.DeleteDomainParams{
+		ID:     params.DomainID,
 		UserID: params.UserID,
-	}); err!=nil{
+	}); err != nil {
 		log.Print(err.Error())
-		if errors.Is(err,sql.ErrNoRows){
+		if errors.Is(err, sql.ErrNoRows) {
 			return c.Status(404).JSON(fiber.Map{
-				"error":"no domain found ",
+				"error": "no domain found ",
 			})
 		}
 		return c.Status(400).JSON(fiber.Map{
-			"error":"Error deleting domain : " + err.Error(),
+			"error": "Error deleting domain : " + err.Error(),
 		})
 	}
 	// if err := database.DbConn.Where("id =? AND user_id=?", domainId, userId).Delete(&model.Domain{}).Error; err != nil {
@@ -252,4 +301,3 @@ func DeleteDomain(c *fiber.Ctx) error {
 	// }
 	return c.Status(200).JSON("domain deleted successfully")
 }
-

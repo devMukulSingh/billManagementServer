@@ -21,6 +21,7 @@ func SetupRoutes(app *fiber.App) {
 	distributor := v1.Group("/distributor")
 	product := v1.Group("/product")
 
+	domain.Get("/",controller.GetSearchedDomains)
 	domain.Get("/get-all-domains",controller.GetAllDomains)
 	domain.Get("/get-domains",middleware.ValidateQueryStrings, controller.GetDomains)
 	domain.Post("/",middleware.ValidateBody[types.Domain](), controller.PostDomain)
