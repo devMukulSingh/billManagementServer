@@ -9,6 +9,12 @@ import (
 
 //Request body types
 
+type SearchQuery struct{
+	Page   int32 `query:"page" validate:"required,numeric"`
+	Limit  int32 `query:"limit" validate:"required,numeric"`
+	Name	string	`query:"name" validate:"required,min=1"`
+}
+
 type DomainParams struct{
 	DomainID		string 	`params:"domainId" validate:"required,min=1"`
 	UserID			 string			`params:"userId" validate:"required,min=1"`

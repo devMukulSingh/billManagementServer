@@ -249,13 +249,11 @@ func (q *Queries) GetAllDomains(ctx context.Context, userID string) (GetAllDomai
 }
 
 const getAllProducts = `-- name: GetAllProducts :many
-
     SELECT id, name, rate, user_id, created_at, updated_at FROM products
     WHERE user_id = $1
     ORDER BY created_at DESC
 `
 
-// ------PRODUCTS----------------
 func (q *Queries) GetAllProducts(ctx context.Context, userID string) ([]Product, error) {
 	rows, err := q.db.Query(ctx, getAllProducts, userID)
 	if err != nil {
@@ -689,6 +687,69 @@ func (q *Queries) GetSearchedDomains(ctx context.Context, arg GetSearchedDomains
 		return nil, err
 	}
 	return items, nil
+}
+
+const getSearchedProducts = `-- name: GetSearchedProducts :many
+    SELECT id, name, rate, user_id, created_at, updated_at FROM products
+    WHERE LOWER(name) LIKE $1 AND user_id=$2
+    OFFSET $3 LIMIT $4
+`
+
+type GetSearchedProductsParams struct {
+	Name   string `json:"name"`
+	UserID string `json:"user_id"`
+	Offset int32  `json:"offset"`
+	Limit  int32  `json:"limit"`
+}
+
+// ------PRODUCTS----------------
+func (q *Queries) GetSearchedProducts(ctx context.Context, arg GetSearchedProductsParams) ([]Product, error) {
+	rows, err := q.db.Query(ctx, getSearchedProducts,
+		arg.Name,
+		arg.UserID,
+		arg.Offset,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Product
+	for rows.Next() {
+		var i Product
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Rate,
+			&i.UserID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getSearchedProductsCount = `-- name: GetSearchedProductsCount :one
+    SELECT COUNT(*) FROM Products
+    WHERE LOWER(name) LIKE $1 AND user_id=$2
+`
+
+type GetSearchedProductsCountParams struct {
+	Name   string `json:"name"`
+	UserID string `json:"user_id"`
+}
+
+func (q *Queries) GetSearchedProductsCount(ctx context.Context, arg GetSearchedProductsCountParams) (int64, error) {
+	row := q.db.QueryRow(ctx, getSearchedProductsCount, arg.Name, arg.UserID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
 }
 
 const postBill = `-- name: PostBill :one

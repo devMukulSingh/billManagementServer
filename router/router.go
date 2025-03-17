@@ -41,6 +41,7 @@ func SetupRoutes(app *fiber.App) {
 	bill.Put("/:billId", middleware.ValidateBody[types.Bill](), controller.UpdateBill)
 	bill.Delete("/:billId",controller.DeleteBill)
 
+	product.Get("/",controller.GetSearchedProduct)
 	product.Get("/get-all-products",controller.GetAllProducts)
 	product.Get("/get-products",middleware.ValidateQueryStrings,controller.GetProducts)
 	product.Post("/",middleware.ValidateBody[types.Product](), controller.PostProduct)

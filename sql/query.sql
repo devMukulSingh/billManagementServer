@@ -99,6 +99,10 @@
 
 
 --------PRODUCTS----------------
+-- name: GetSearchedProducts :many
+    SELECT * FROM products
+    WHERE LOWER(name) LIKE $1 AND user_id=$2
+    OFFSET $3 LIMIT $4;
 
 -- name: GetAllProducts :many
     SELECT * FROM products
@@ -114,6 +118,10 @@
 -- name: GetProductsCount :one
     SELECT COUNT(*) FROM Products
     WHERE user_id = $1;
+
+-- name: GetSearchedProductsCount :one
+    SELECT COUNT(*) FROM Products
+    WHERE LOWER(name) LIKE $1 AND user_id=$2;
     
 -- name: PostProduct :exec
     INSERT INTO products(id,name,rate,user_id)

@@ -19,6 +19,49 @@ import (
 	// "gorm.io/gorm"
 )
 
+func GetSearchedProduct(c *fiber.Ctx) error {
+	userId := c.Params("userId")
+	var queries types.SearchQuery
+	if err := c.QueryParser(&queries); err != nil {
+		log.Print(err)
+	}
+
+	data, err := dbconnection.Queries.GetSearchedProducts(dbconnection.Ctx, database.GetSearchedProductsParams{
+		Name:  "%" + queries.Name + "%",
+		UserID: userId,
+		Offset: (queries.Page - 1) * queries.Limit,
+		Limit:  queries.Limit,
+	})
+	if err != nil {
+		log.Print(err)
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Error getting searched products :" + err.Error(),
+		})
+	}
+
+	count, err := dbconnection.Queries.GetSearchedProductsCount(dbconnection.Ctx, database.GetSearchedProductsCountParams{
+		Name:   "%" + queries.Name + "%",
+		UserID: userId,
+	})
+	if err != nil {
+		log.Print(err)
+		return c.Status(500).JSON(fiber.Map{
+			"error": "Error getting searched products count :" + err.Error(),
+		})
+	}
+
+	type Response struct{
+		Data 		[]database.Product	`json:"data"`
+		Count 		int64			`json:"count"`
+	}
+
+	return c.Status(200).JSON(Response{
+		Data: data,
+		Count: count,
+	})
+
+}
+
 func GetAllProducts(c *fiber.Ctx) error {
 
 	userId := c.Params("userId")
