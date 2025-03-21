@@ -35,6 +35,7 @@ func GetSearchedBills(c *fiber.Ctx) error {
 		UserID:      userId,
 		CreatedAt:   queries.StartDate,
 		CreatedAt_2: queries.EndDate,
+		
 	})
 	if err != nil {
 		log.Print(err)

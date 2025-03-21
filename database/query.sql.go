@@ -14,14 +14,14 @@ import (
 )
 
 const batchInsertBillItems = `-- name: BatchInsertBillItems :exec
-INSERT INTO bill_items(id, quantity, amount, product_id, bill_id)
-VALUES (
-    unnest($1::text[]), 
-    unnest($2::int[]), 
-    unnest($3::int[]), 
-    unnest($4::text[]), 
-    unnest($5::text[]) 
-)
+    INSERT INTO bill_items(id, quantity, amount, product_id, bill_id)
+    VALUES (
+        unnest($1::text[]), 
+        unnest($2::int[]), 
+        unnest($3::int[]), 
+        unnest($4::text[]), 
+        unnest($5::text[]) 
+    )
 `
 
 type BatchInsertBillItemsParams struct {
@@ -567,34 +567,44 @@ func (q *Queries) GetSearchDomainsCount(ctx context.Context, arg GetSearchDomain
 }
 
 const getSearchedBills = `-- name: GetSearchedBills :many
-    SELECT bills.id, bills.date, bills.is_paid, bills.created_at,
+       SELECT bills.id,bills.date,bills.is_paid,bills.created_at, bills.total_amount,
     json_build_object(
-        "id",domains.id,
-        "name",domains.name
-    ) as domain,
+        'id',domains.id,
+        'name',domains.name
+    ) AS domain,
     json_build_object(
-        "id",distributors.id,
-        "name",distributors.name,
-        "domain_id",distributors.domain_id
-    ) as distributor,
+        'id',distributors.id,
+        'name',distributors.name,
+        'domain_id',distributors.domain_id
+    ) AS distributor,
     json_agg(
         json_build_object(
-            "id",bill_items.id,
-            "quantity",bill_items.quantity,
-            "amount",bill_items.amount,
-            "product",json_build_object(
-                "name",products.name,
-                "id" , products.id,
-                "rate",products.rate
+            'id',bill_items.id,
+            'bill_id',bill_items.bill_id,
+            'quantity',bill_items.quantity,
+            'amount',bill_items.amount,
+            'product',json_build_object(
+                'name',products.name,
+                'id' , products.id,
+                'rate',products.rate
             )
         ) 
-    ) as bill_items
+    ) AS bill_items
     FROM bills
     JOIN domains ON domains.id = bills.domain_id
     JOIN distributors ON distributors.id = bills.distributor_id
-    JOIN bill_items ON bill_items.bill_id = bills.id       
-    JOIN products ON products.user_id = bills.user_id                                                                                                                     
+    JOIN bill_items ON bill_items.bill_id = bills.id
+    JOIN products ON products.id = bill_items.product_id     
     WHERE bills.created_at BETWEEN $1 AND $2 AND bills.user_id = $3
+    GROUP BY bills.id,
+         bills.date,
+         bills.is_paid,
+         bills.created_at,
+         domains.id,
+         domains.name,
+         distributors.id,
+         distributors.name,
+         distributors.domain_id
     ORDER BY bills.created_at DESC
     OFFSET $4 LIMIT $5
 `
@@ -612,6 +622,7 @@ type GetSearchedBillsRow struct {
 	Date        time.Time       `json:"date"`
 	IsPaid      pgtype.Bool     `json:"is_paid"`
 	CreatedAt   time.Time       `json:"created_at"`
+	TotalAmount pgtype.Int4     `json:"total_amount"`
 	Domain      json.RawMessage `json:"domain"`
 	Distributor json.RawMessage `json:"distributor"`
 	BillItems   json.RawMessage `json:"bill_items"`
@@ -638,6 +649,7 @@ func (q *Queries) GetSearchedBills(ctx context.Context, arg GetSearchedBillsPara
 			&i.Date,
 			&i.IsPaid,
 			&i.CreatedAt,
+			&i.TotalAmount,
 			&i.Domain,
 			&i.Distributor,
 			&i.BillItems,
