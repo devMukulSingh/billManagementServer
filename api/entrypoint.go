@@ -10,7 +10,6 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
-	"github.com/joho/godotenv"
 	"github.com/gofiber/fiber/v2/middleware/adaptor"
 )
 
@@ -19,12 +18,7 @@ var app *fiber.App
 
 func init() {
 
-	if err := godotenv.Load(".env"); err != nil {
-		log.Print("Error loading dotenv : " + err.Error())
-	}
-
 	app = fiber.New()
-
 	app.Use(logger.New())
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: utils.GetBaseUrlClient(),
@@ -38,10 +32,10 @@ func init() {
 		log.Fatalf("Error in connection db : %s",err.Error())
 	}
 	defer dbconnection.Connection.Close()
-	
+	log.Print("Db connection successfull")
 	router.SetupRoutes(app)
-	log.Print("Server is running at 8000")
-	app.Listen(":8000")
+	// log.Print("Server is running at 8000")
+	// app.Listen(":8000")
 }
 
 func Handler(w http.ResponseWriter, r *http.Request) {

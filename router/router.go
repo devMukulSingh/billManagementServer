@@ -16,6 +16,10 @@ func SetupRoutes(app *fiber.App) {
 	//add user validation middleware
 	v1 := api.Group("/v1/:userId")
 	
+	v1.Get("/",func(ctx * fiber.Ctx ) error {
+		return ctx.SendString("Hello from vercel")
+	},)
+
 	domain := v1.Group("/domain")
 	bill := v1.Group("/bill")
 	distributor := v1.Group("/distributor")
