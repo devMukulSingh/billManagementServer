@@ -10,16 +10,16 @@ import (
 //Request body types
 
 type SearchBillsQuery struct{
-	Page   		int32 `query:"page" validate:"required,numeric"`
-	Limit  		int32 `query:"limit" validate:"required,numeric"`
+	Page   		int32 `query:"page" validate:"required"`
+	Limit  		int32 `query:"limit" validate:"required"`
 	StartDate	time.Time	`query:"startDate" validate:"required,min=1"`
 	EndDate		time.Time	`query:"endDate" validate:"required,min=1"`
 
 }
 
 type SearchQuery struct{
-	Page   int32 `query:"page" validate:"required,numeric"`
-	Limit  int32 `query:"limit" validate:"required,numeric"`
+	Page   int32 `query:"page" validate:"required"`
+	Limit  int32 `query:"limit" validate:"required"`
 	Name	string	`query:"name" validate:"required,min=1"`
 }
 
@@ -40,8 +40,8 @@ type BillParams struct{
 	UserId			 	string					`params:"userId" validate:"required,min=1"`
 }
 type Query struct {
-	Page   int32 `query:"page" validate:"required,numeric"`
-	Limit  int32 `query:"limit" validate:"required,numeric"`
+	Page   int32 `query:"page" validate:"required"`
+	Limit  int32 `query:"limit" validate:"required"`
 }
 
 type Param struct {
