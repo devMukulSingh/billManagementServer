@@ -2,8 +2,15 @@ package api
 
 import (
 	"net/http"
-
+	"log"
+	 "github.com/devMukulSingh/billManagementServer.git/dbConnection"
+	"github.com/devMukulSingh/billManagementServer.git/lib"
+	"github.com/devMukulSingh/billManagementServer.git/router"
+	"github.com/devMukulSingh/billManagementServer.git/valkeyCache"
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/joho/godotenv"
 	"github.com/gofiber/fiber/v2/middleware/adaptor"
 )
 
@@ -11,11 +18,30 @@ import (
 var app *fiber.App
 
 func init() {
-    app = fiber.New()
-	r := app.Group("/api");
-    r.Get("/", func(c *fiber.Ctx) error {
-        return c.SendString("Hello from Fiber on Vercel!")
-    })
+
+	if err := godotenv.Load(".env"); err != nil {
+		log.Print("Error loading dotenv : " + err.Error())
+	}
+
+	app = fiber.New()
+
+	app.Use(logger.New())
+	app.Use(cors.New(cors.Config{
+		AllowOrigins: utils.GetBaseUrlClient(),
+	}))
+
+	if err := valkeyCache.Connect();err!=nil{
+		log.Printf("Error connecting to valkey : %s",err.Error())
+	}
+
+	if err := dbconnection.ConnectDb(); err!=nil{
+		log.Fatalf("Error in connection db : %s",err.Error())
+	}
+	defer dbconnection.Connection.Close()
+	
+	router.SetupRoutes(app)
+	log.Print("Server is running at 8000")
+	app.Listen(":8000")
 }
 
 func Handler(w http.ResponseWriter, r *http.Request) {
