@@ -1,7 +1,11 @@
+
+
 {
-  "functions": {
-    "api/index.go": {
-      "runtime": "vercel-go@latest"
+  "trailingSlash":false,
+  "rewrites":[
+    {
+      "source":"/api(.*)",
+      "destination":"api/entrypoint.go"
     }
-  }
+  ]
 }

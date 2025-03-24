@@ -13,13 +13,13 @@ import (
 	"github.com/joho/godotenv"
 	// "gorm.io/gorm"
 )
-
+var app * fiber.App;
 func main() {
 	if err := godotenv.Load(".env"); err != nil {
 		log.Print("Error loading dotenv : " + err.Error())
 	}
 
-	app := fiber.New()
+	app = fiber.New()
 
 	app.Use(logger.New())
 	app.Use(cors.New(cors.Config{
