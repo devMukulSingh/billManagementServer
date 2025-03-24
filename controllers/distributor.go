@@ -2,11 +2,14 @@ package controller
 
 import (
 	"errors"
+	"log"
+	"strings"
+
 	"github.com/devMukulSingh/billManagementServer.git/database"
 	"github.com/devMukulSingh/billManagementServer.git/dbConnection"
 	"github.com/devMukulSingh/billManagementServer.git/types"
 	"github.com/jackc/pgx/v5/pgconn"
-	"log"
+
 	// "github.com/devMukulSingh/billManagementServer.git/valkeyCache"
 	"github.com/gofiber/fiber/v2"
 )
@@ -23,7 +26,7 @@ func GetSearchedDistributors(c *fiber.Ctx) error {
 		log.Print(err)
 	}
 	data, err := dbconnection.Queries.GetSearchedDistributors(dbconnection.Ctx, database.GetSearchedDistributorsParams{
-		Name:  "%" + query.Name + "%",
+		Name:  "%" + strings.ToLower(query.Name) + "%",
 		UserID: userId,
 		Offset: (query.Page - 1)*query.Limit,
 		Limit:  query.Limit,
@@ -36,7 +39,7 @@ func GetSearchedDistributors(c *fiber.Ctx) error {
 	}
 
 	count, err := dbconnection.Queries.GetSearchedDistributorsCount(dbconnection.Ctx, database.GetSearchedDistributorsCountParams{
-		Name:   "%" + query.Name + "%",
+		Name:   "%" + strings.ToLower(query.Name) + "%",
 		UserID: userId,
 	})
 	if err != nil {

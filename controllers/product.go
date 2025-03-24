@@ -4,6 +4,8 @@ import (
 	// "encoding/json"
 	"errors"
 	"log"
+	"strings"
+
 	// "strconv"
 	// "errors"
 	// "github.com/devMukulSingh/billManagementServer.git/model"
@@ -27,7 +29,7 @@ func GetSearchedProduct(c *fiber.Ctx) error {
 	}
 
 	data, err := dbconnection.Queries.GetSearchedProducts(dbconnection.Ctx, database.GetSearchedProductsParams{
-		Name:  "%" + queries.Name + "%",
+		Name:  "%" + strings.ToLower(queries.Name) + "%",
 		UserID: userId,
 		Offset: (queries.Page - 1) * queries.Limit,
 		Limit:  queries.Limit,
@@ -40,7 +42,7 @@ func GetSearchedProduct(c *fiber.Ctx) error {
 	}
 
 	count, err := dbconnection.Queries.GetSearchedProductsCount(dbconnection.Ctx, database.GetSearchedProductsCountParams{
-		Name:   "%" + queries.Name + "%",
+		Name:   "%" + strings.ToLower(queries.Name) + "%",
 		UserID: userId,
 	})
 	if err != nil {
