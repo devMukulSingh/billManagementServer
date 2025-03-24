@@ -1,11 +1,7 @@
 
 
 {
-   "functions": {
-    "api/entrypoint.go": {
-      "runtime": "go1.23.4"
-    }
-  },
+
   "trailingSlash":false,
   "rewrites":[
     {
