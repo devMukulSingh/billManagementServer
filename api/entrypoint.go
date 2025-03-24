@@ -12,7 +12,8 @@ var app *fiber.App
 
 func init() {
     app = fiber.New()
-    app.Get("/", func(c *fiber.Ctx) error {
+	r := app.Group("/api");
+    r.Get("/", func(c *fiber.Ctx) error {
         return c.SendString("Hello from Fiber on Vercel!")
     })
 }
