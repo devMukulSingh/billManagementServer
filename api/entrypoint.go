@@ -40,5 +40,5 @@ func init() {
 
 func Handler(w http.ResponseWriter, r *http.Request) {
     adaptor.FiberApp(app)(w, r)
-	defer dbconnection.Connection.Close()
+	// defer dbconnection.Connection.Close()
 }
