@@ -19,9 +19,7 @@ func init() {
 
 	app = fiber.New()
 	app.Use(logger.New())
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: "*",
-	}))
+	app.Use(cors.New())
 
 	// if err := valkeyCache.Connect();err!=nil{
 	// 	log.Printf("Error connecting to valkey : %s",err.Error())

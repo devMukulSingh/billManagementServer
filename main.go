@@ -4,7 +4,7 @@ import (
 	"log"
 	// "github.com/devMukulSingh/billManagementServer.git/db"
 	 "github.com/devMukulSingh/billManagementServer.git/dbConnection"
-	"github.com/devMukulSingh/billManagementServer.git/lib"
+	// "github.com/devMukulSingh/billManagementServer.git/lib"
 	"github.com/devMukulSingh/billManagementServer.git/router"
 	"github.com/devMukulSingh/billManagementServer.git/valkeyCache"
 	"github.com/gofiber/fiber/v2"
@@ -22,9 +22,7 @@ func main() {
 	app = fiber.New()
 
 	app.Use(logger.New())
-	app.Use(cors.New(cors.Config{
-		AllowOrigins: utils.GetBaseUrlClient(),
-	}))
+	app.Use(cors.New())
 
 	if err := valkeyCache.Connect();err!=nil{
 		log.Printf("Error connecting to valkey : %s",err.Error())
