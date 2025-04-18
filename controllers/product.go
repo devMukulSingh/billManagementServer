@@ -29,7 +29,7 @@ func GetSearchedProduct(c *fiber.Ctx) error {
 	}
 
 	data, err := dbconnection.Queries.GetSearchedProducts(dbconnection.Ctx, database.GetSearchedProductsParams{
-		Name:  "%" + strings.ToLower(queries.Name) + "%",
+		Name:   "%" + strings.ToLower(queries.Name) + "%",
 		UserID: userId,
 		Offset: (queries.Page - 1) * queries.Limit,
 		Limit:  queries.Limit,
@@ -52,13 +52,13 @@ func GetSearchedProduct(c *fiber.Ctx) error {
 		})
 	}
 
-	type Response struct{
-		Data 		[]database.Product	`json:"data"`
-		Count 		int64			`json:"count"`
+	type Response struct {
+		Data  []database.Product `json:"data"`
+		Count int64              `json:"count"`
 	}
 
 	return c.Status(200).JSON(Response{
-		Data: data,
+		Data:  data,
 		Count: count,
 	})
 
@@ -144,7 +144,7 @@ func GetProducts(c *fiber.Ctx) error {
 	if err != nil {
 		log.Print(err.Error())
 		return c.Status(500).JSON(fiber.Map{
-			"error": "Error in getting Prodocts " + err.Error(),
+			"error": "Error in getting Products " + err.Error(),
 		})
 	}
 
@@ -276,6 +276,14 @@ func DeleteProduct(c *fiber.Ctx) error {
 		UserID: params.UserId,
 	}); err != nil {
 		log.Print(err)
+		var pgErr *pgconn.PgError
+		if ok := errors.As(err, &pgErr); ok {
+			if pgErr.Code == "23503" {
+				return c.Status(400).JSON(fiber.Map{
+					"error": "Cannot delete product, becuause its been used in some bill",
+				})
+			}
+		}
 		return c.Status(500).JSON(fiber.Map{
 			"error": "Error in deleting product " + err.Error(),
 		})

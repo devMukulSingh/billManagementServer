@@ -28,10 +28,10 @@ func GetSearchedDomains(c *fiber.Ctx) error {
 	userId := c.Params("userId")
 
 	data, err := dbconnection.Queries.GetSearchedDomains(dbconnection.Ctx, database.GetSearchedDomainsParams{
-		Name: "%" + strings.ToLower(queries.Name) + "%",
+		Name:   "%" + strings.ToLower(queries.Name) + "%",
 		UserID: userId,
 		Offset: (queries.Page - 1) * queries.Limit,
-		Limit: queries.Limit,
+		Limit:  queries.Limit,
 	})
 	if err != nil {
 		log.Print(err)
@@ -50,11 +50,11 @@ func GetSearchedDomains(c *fiber.Ctx) error {
 		})
 	}
 	type Response struct {
-		Data  []database.GetSearchedDomainsRow		`json:"data"`
-		Count int64									`json:"count"`
+		Data  []database.GetSearchedDomainsRow `json:"data"`
+		Count int64                            `json:"count"`
 	}
 	response := Response{
-		Data:  data	,
+		Data:  data,
 		Count: count,
 	}
 
@@ -236,6 +236,7 @@ func UpdateDomain(c *fiber.Ctx) error {
 					"error": "Domain already exists, try another.",
 				})
 			}
+
 		}
 		return c.Status(500).JSON(fiber.Map{
 			"error": "Error updating domain : " + err.Error(),
@@ -271,12 +272,21 @@ func DeleteDomain(c *fiber.Ctx) error {
 		ID:     params.DomainID,
 		UserID: params.UserID,
 	}); err != nil {
+		var pgErr *pgconn.PgError
 		log.Print(err.Error())
+		if ok := errors.As(err, &pgErr); ok {
+			if pgErr.Code == "23503" {
+				return c.Status(400).JSON(fiber.Map{
+					"error": "Cannot delete domain, becuause its been used in some distributor or bill.",
+				})
+			}
+		}
 		if errors.Is(err, sql.ErrNoRows) {
 			return c.Status(404).JSON(fiber.Map{
 				"error": "no domain found ",
 			})
 		}
+
 		return c.Status(400).JSON(fiber.Map{
 			"error": "Error deleting domain : " + err.Error(),
 		})

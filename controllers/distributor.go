@@ -78,7 +78,7 @@ func GetDistributors(c *fiber.Ctx) error {
 
 	data, err := dbconnection.Queries.GetDistributors(dbconnection.Ctx, database.GetDistributorsParams{
 		UserID: userId,
-		Offset: page,
+		Offset: (page - 1) * limit,
 		Limit:  limit,
 	})
 	if err != nil {
