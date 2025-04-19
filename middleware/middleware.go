@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"log"
+
 	"github.com/devMukulSingh/billManagementServer.git/types"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -43,13 +45,16 @@ func ValidateQueryStrings(c *fiber.Ctx) error {
 }
 
 func ValidateBody[BodyType any]() fiber.Handler {
+
 	return func(c *fiber.Ctx) error {
 		body := new(BodyType)
 		if err:= c.BodyParser(body);err!=nil{
+			log.Print(err.Error())
 			return c.Status(400).JSON(fiber.Map{
 				"error":"Error parsing req body :" + err.Error(),
 			})
 		}
+		log.Print(body)
 		if validationErrors := GetValidationErrors(body); validationErrors != nil {
 			return c.Status(400).JSON(validationErrors)
 		}

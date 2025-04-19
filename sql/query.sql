@@ -25,7 +25,7 @@
 -- name: GetSearchDomainsCount :one
     SELECT COUNT(*) AS count
     FROM domains
-    WHERE name LIKE $1 AND user_id = $2;
+    WHERE LOWER(name) LIKE $1 AND user_id = $2;
 
 -- name: PostDomain :exec
     INSERT INTO domains(id,name,user_id)

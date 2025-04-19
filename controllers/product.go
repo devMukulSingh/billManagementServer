@@ -185,11 +185,8 @@ func GetProducts(c *fiber.Ctx) error {
 func PostProduct(c *fiber.Ctx) error {
 	body := new(types.Product)
 	userId := c.Params("userId")
-
-	if err := c.BodyParser(body); err != nil {
-		log.Printf("Error parsing req body %s", err.Error())
-		return c.Status(400).JSON("Error parsing body")
-	}
+	
+	c.BodyParser(body)
 
 	if err := dbconnection.Queries.PostProduct(dbconnection.Ctx, database.PostProductParams{
 		Name:   body.Name,
