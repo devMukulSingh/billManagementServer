@@ -228,23 +228,36 @@ func (q *Queries) GetAllDistributors(ctx context.Context, userID string) ([]GetA
 	return items, nil
 }
 
-const getAllDomains = `-- name: GetAllDomains :one
-    SELECT 
-        (SELECT( COUNT(*)  ) FROM domains ) AS count, JSON_ARRAYAGG(domains) AS data
-     FROM domains 
+const getAllDomains = `-- name: GetAllDomains :many
+    SELECT id,name,created_at 
+    FROM domains 
     WHERE domains.user_id=$1
 `
 
 type GetAllDomainsRow struct {
-	Count int64       `json:"count"`
-	Data  interface{} `json:"data"`
+	ID        string    `json:"id"`
+	Name      string    `json:"name"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
-func (q *Queries) GetAllDomains(ctx context.Context, userID string) (GetAllDomainsRow, error) {
-	row := q.db.QueryRow(ctx, getAllDomains, userID)
-	var i GetAllDomainsRow
-	err := row.Scan(&i.Count, &i.Data)
-	return i, err
+func (q *Queries) GetAllDomains(ctx context.Context, userID string) ([]GetAllDomainsRow, error) {
+	rows, err := q.db.Query(ctx, getAllDomains, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetAllDomainsRow
+	for rows.Next() {
+		var i GetAllDomainsRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.CreatedAt); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getAllProducts = `-- name: GetAllProducts :many

@@ -5,10 +5,9 @@
     ORDER BY created_at DESC
     OFFSET $3 LIMIT $4;
 
--- name: GetAllDomains :one
-    SELECT 
-        (SELECT( COUNT(*)  ) FROM domains ) AS count, JSON_ARRAYAGG(domains) AS data
-     FROM domains 
+-- name: GetAllDomains :many
+    SELECT id,name,created_at 
+    FROM domains 
     WHERE domains.user_id=$1;
 
 -- name: GetDomains :many

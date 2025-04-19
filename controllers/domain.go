@@ -71,22 +71,22 @@ func GetAllDomains(c *fiber.Ctx) error {
 		})
 	}
 
-	type Response struct {
-		Data  interface{} `json:"data"`
-		Count int64       `json:"count"`
-	}
+	// type Response struct {
+	// 	Data  interface{} `json:"data"`
+	// 	Count int64       `json:"count"`
+	// }
 	data, err := dbconnection.Queries.GetAllDomains(dbconnection.Ctx, params.UserID)
 
 	if err != nil {
 		log.Print(err.Error())
 	}
 
-	response := Response{
-		Data:  data.Data,
-		Count: data.Count,
-	}
+	// response := Response{
+	// 	Data:  data.Data,
+	// 	Count: data.Count,
+	// }
 
-	return c.Status(200).JSON(response)
+	return c.Status(200).JSON(data)
 }
 func GetDomains(c *fiber.Ctx) error {
 
