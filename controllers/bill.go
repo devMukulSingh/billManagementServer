@@ -22,8 +22,8 @@ func GetSearchedBills(c *fiber.Ctx) error {
 		UserID:      userId,
 		Offset:      (queries.Page - 1) * queries.Limit,
 		Limit:       queries.Limit,
-		CreatedAt:   queries.StartDate,
-		CreatedAt_2: queries.EndDate,
+		Date:   queries.StartDate,
+		Date_2: queries.EndDate,
 	})
 	if err != nil {
 		log.Print(err)
@@ -33,8 +33,8 @@ func GetSearchedBills(c *fiber.Ctx) error {
 	}
 	count, err := dbconnection.Queries.GetSearchedBillsCount(dbconnection.Ctx, database.GetSearchedBillsCountParams{
 		UserID:      userId,
-		CreatedAt:   queries.StartDate,
-		CreatedAt_2: queries.EndDate,
+		Date:   queries.StartDate,
+		Date_2: queries.EndDate,
 		
 	})
 	if err != nil {
