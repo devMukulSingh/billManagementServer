@@ -167,7 +167,7 @@
     JOIN distributors ON distributors.id = bills.distributor_id
     JOIN bill_items ON bill_items.bill_id = bills.id
     JOIN products ON products.id = bill_items.product_id     
-    WHERE bills.created_at BETWEEN $1 AND $2 AND bills.user_id = $3
+    WHERE bills.date BETWEEN $1 AND $2 AND bills.user_id = $3
     GROUP BY bills.id,
          bills.date,
          bills.is_paid,
@@ -259,11 +259,11 @@
 
 -- name: GetSearchedBillsCount :one
     SELECT COUNT(*) FROM bills
-    WHERE created_at BETWEEN $1 AND $2 AND user_id = $3;
+    WHERE date BETWEEN $1 AND $2 AND user_id = $3;
  
 -- name: PostBill :one
     INSERT INTO bills(id,date,total_amount,is_paid,user_id,distributor_id,domain_id) 
-    VALUES(gen_random_uuid(),@date::timestamp ,$1,$2,$3,$4,$5)
+    VALUES(gen_random_uuid(),@date::timestamp ,$1,$2,$3,$4,$5,$6)
     RETURNING id;
 
 -- name: UpdateBill :exec

@@ -131,6 +131,7 @@ func PostBill(c *fiber.Ctx) error {
 		UserID:        userId,
 		DistributorID: body.DistributorId,
 		DomainID:      body.DomainId,
+		
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create bill: %w", err)
