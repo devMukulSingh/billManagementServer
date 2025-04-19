@@ -263,7 +263,7 @@
  
 -- name: PostBill :one
     INSERT INTO bills(id,date,total_amount,is_paid,user_id,distributor_id,domain_id) 
-    VALUES(gen_random_uuid(),@date::timestamp ,$1,$2,$3,$4,$5,$6)
+    VALUES(gen_random_uuid(),@date::timestamp ,$1,$2,$3,$4,$5)
     RETURNING id;
 
 -- name: UpdateBill :exec

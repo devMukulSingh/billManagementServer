@@ -595,7 +595,7 @@ const getSearchedBills = `-- name: GetSearchedBills :many
     JOIN distributors ON distributors.id = bills.distributor_id
     JOIN bill_items ON bill_items.bill_id = bills.id
     JOIN products ON products.id = bill_items.product_id     
-    WHERE bills.created_at BETWEEN $1 AND $2 AND bills.user_id = $3
+    WHERE bills.date BETWEEN $1 AND $2 AND bills.user_id = $3
     GROUP BY bills.id,
          bills.date,
          bills.is_paid,
@@ -610,11 +610,11 @@ const getSearchedBills = `-- name: GetSearchedBills :many
 `
 
 type GetSearchedBillsParams struct {
-	CreatedAt   time.Time `json:"created_at"`
-	CreatedAt_2 time.Time `json:"created_at_2"`
-	UserID      string    `json:"user_id"`
-	Offset      int32     `json:"offset"`
-	Limit       int32     `json:"limit"`
+	Date   time.Time `json:"date"`
+	Date_2 time.Time `json:"date_2"`
+	UserID string    `json:"user_id"`
+	Offset int32     `json:"offset"`
+	Limit  int32     `json:"limit"`
 }
 
 type GetSearchedBillsRow struct {
@@ -631,8 +631,8 @@ type GetSearchedBillsRow struct {
 // ----------------BILLS------------------------------
 func (q *Queries) GetSearchedBills(ctx context.Context, arg GetSearchedBillsParams) ([]GetSearchedBillsRow, error) {
 	rows, err := q.db.Query(ctx, getSearchedBills,
-		arg.CreatedAt,
-		arg.CreatedAt_2,
+		arg.Date,
+		arg.Date_2,
 		arg.UserID,
 		arg.Offset,
 		arg.Limit,
@@ -666,17 +666,17 @@ func (q *Queries) GetSearchedBills(ctx context.Context, arg GetSearchedBillsPara
 
 const getSearchedBillsCount = `-- name: GetSearchedBillsCount :one
     SELECT COUNT(*) FROM bills
-    WHERE created_at BETWEEN $1 AND $2 AND user_id = $3
+    WHERE date BETWEEN $1 AND $2 AND user_id = $3
 `
 
 type GetSearchedBillsCountParams struct {
-	CreatedAt   time.Time `json:"created_at"`
-	CreatedAt_2 time.Time `json:"created_at_2"`
-	UserID      string    `json:"user_id"`
+	Date   time.Time `json:"date"`
+	Date_2 time.Time `json:"date_2"`
+	UserID string    `json:"user_id"`
 }
 
 func (q *Queries) GetSearchedBillsCount(ctx context.Context, arg GetSearchedBillsCountParams) (int64, error) {
-	row := q.db.QueryRow(ctx, getSearchedBillsCount, arg.CreatedAt, arg.CreatedAt_2, arg.UserID)
+	row := q.db.QueryRow(ctx, getSearchedBillsCount, arg.Date, arg.Date_2, arg.UserID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
